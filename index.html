@@ -338,14 +338,62 @@ input[type=number]{-moz-appearance:textfield}
 .empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
 
 @media (max-width:370px){.stats,.big3{grid-template-columns:1fr 1fr}.qa button{font-size:11px}.knobs{grid-template-columns:1fr}}
+/* glass header */
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:4;margin-inline:-16px;padding-inline:16px;background:color-mix(in srgb,var(--bg) 78%,transparent);-webkit-backdrop-filter:saturate(1.8) blur(16px);backdrop-filter:saturate(1.8) blur(16px);transition:box-shadow .25s}
+.hdr.scrolled{box-shadow:0 1px 0 var(--line)}
+/* living hero */
+.hero>*{position:relative;z-index:1}
+.hero .orb{position:absolute;z-index:0;border-radius:50%;filter:blur(28px);opacity:.35;pointer-events:none;background:radial-gradient(circle,var(--hero-ink),transparent 70%)}
+.hero .orb.o1{width:220px;height:220px;right:-70px;top:-90px}
+.hero .orb.o2{width:180px;height:180px;left:-60px;bottom:-110px;opacity:.22}
+.tabbar .in{position:relative}
+.tabind{position:absolute;top:6px;height:calc(100% - 12px);border-radius:16px;background:var(--accent-soft);z-index:0;pointer-events:none}
+.tabbar button{position:relative;z-index:1}
+.scrim{-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.sheet{will-change:transform;touch-action:pan-y}
+.grab{cursor:grab;padding:0}
+.shh{touch-action:none}
+#confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
 @media (prefers-reduced-motion:no-preference){
-  .sheet{animation:up .28s cubic-bezier(.2,.8,.2,1)}
-  .scrim{animation:fade .2s ease-out}
-  .view{animation:fade .18s ease-out}
-  @keyframes up{from{transform:translateY(40px)}to{transform:none}}
-  @keyframes fade{from{opacity:.4}to{opacity:1}}
-  .qa button,.item,.acard,.btn{transition:transform .12s}
-  .qa button:active,.acard:active,.btn:active{transform:scale(.97)}
+  @keyframes rise{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+  @keyframes draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:none}}
+  @keyframes ringIn{from{stroke-dasharray:0 200}}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.22) translateY(-2px)}100%{transform:scale(1)}}
+  @keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-60px,40px) scale(1.15)}}
+  @keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(80px,-30px) scale(.9)}}
+  @keyframes sheetIn{from{transform:translateY(100%)}to{transform:none}}
+  @keyframes sheetOut{to{transform:translateY(100%)}}
+  @keyframes fadeIn{from{opacity:0}}
+  @keyframes fadeOut{to{opacity:0}}
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,16px) scale(.9)}to{opacity:1;transform:translate(-50%,0)}}
+  @keyframes shimmer{from{transform:translateX(-120%)}to{transform:translateX(220%)}}
+  .enter>*{animation:rise .55s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0)*55ms)}
+  .enter .draw{stroke-dasharray:1;animation:draw 1.2s .25s cubic-bezier(.4,0,.2,1) both}
+  .enter .stack i,.enter .journey .seg,.enter .fill i,.enter .meter i{transform-origin:left;animation:grow .9s .3s cubic-bezier(.2,.8,.2,1) both}
+  .enter .ring .arc{animation:ringIn 1.1s .35s cubic-bezier(.2,.8,.2,1) both}
+  .hero .orb.o1{animation:drift1 14s ease-in-out infinite}
+  .hero .orb.o2{animation:drift2 18s ease-in-out infinite}
+  .hero::after{content:"";position:absolute;inset:0;z-index:0;background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.10) 50%,transparent 70%);transform:translateX(-120%);pointer-events:none}
+  .enter .hero::after{animation:shimmer 1.6s .5s ease-in-out}
+  .tabind{transition:left .45s cubic-bezier(.34,1.4,.5,1),width .45s cubic-bezier(.34,1.4,.5,1)}
+  .tabbar button.just svg{animation:pop .45s cubic-bezier(.34,1.56,.64,1)}
+  .tabbar .plus{transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+  .tabbar .plus:active{transform:scale(.9) rotate(90deg)}
+  .scrim{animation:fadeIn .25s ease-out}
+  .scrim.out{animation:fadeOut .22s ease-in forwards}
+  .sheet{animation:sheetIn .5s cubic-bezier(.16,1,.3,1)}
+  .scrim.out .sheet{animation:sheetOut .24s cubic-bezier(.4,0,1,1) forwards}
+  .sheet.dragging{animation:none;transition:none}
+  .sheet.snap{transition:transform .35s cubic-bezier(.16,1,.3,1)}
+  .toast:not([hidden]){animation:toastIn .4s cubic-bezier(.34,1.56,.64,1)}
+  .qa button,.item,.acard,.btn,.person,.fchip,.stat,.addrow,.skins i,.tabbar button{transition:transform .18s cubic-bezier(.34,1.56,.64,1),background-color .2s,box-shadow .2s}
+  .qa button:active,.acard:active,.btn:active,.person:active,.fchip:active,.addrow:active,.item:active,.tabbar button:active{transform:scale(.96)}
+  .qa button:hover .ic{transform:translateY(-2px)}
+  .qa .ic{transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+  .welcome .art path.draw{stroke-dasharray:1;animation:draw 1.6s .2s cubic-bezier(.4,0,.2,1) both}
+  .welcome .art circle{animation:rise .5s both;animation-delay:calc(.5s + var(--d,0)*.25s)}
+  .fchip,.curs button,.segc span,.person{transition:background-color .25s,color .25s,transform .18s}
 }
 </style>
 </head>
@@ -360,7 +408,7 @@ input[type=number]{-moz-appearance:textfield}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-const APP_VERSION='1.7';
+const APP_VERSION='1.8';
 const KEY='kidfund.v1';
 const CURS=['RUB','USD','EUR','TRY','KZT'];
 const SYM={RUB:'₽',USD:'$',EUR:'€',TRY:'₺',KZT:'₸'};
@@ -432,6 +480,9 @@ function example(){
 }
 function blank(name,birth){return {example:false,child:{name,birth,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},assets:[],ops:[],goals:[],fc:{rule:'debt',fundRate:8,topup:0}}}
 let S=null,tab='home';
+let ANIM=true,POP=null;const LASTV={};
+const REDUCED=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 const FKEY='kidfund.family';
 let FAM=null;
 function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return null}
@@ -443,7 +494,7 @@ if(!FAM||!FAM.kids||!FAM.kids[FAM.active]){const id='k'+uid();FAM={active:id,kid
 S=fixKid(FAM.kids[FAM.active]);
 function kidList(){return Object.entries(FAM.kids).filter(([,k])=>k.child&&k.child.name)}
 function withKid(k,fn){const p=S;S=k;try{return fn()}finally{S=p}}
-function switchKid(id){if(!FAM.kids[id])return;FAM.active=id;S=fixKid(FAM.kids[id]);persist();F.period='all';F.src='all';F.who=null;F.from=F.to='';tab='home';closeSheet();render();window.scrollTo({top:0})}
+function switchKid(id){if(!FAM.kids[id])return;ANIM=true;FAM.active=id;S=fixKid(FAM.kids[id]);persist();F.period='all';F.src='all';F.who=null;F.from=F.to='';tab='home';closeSheet();render();window.scrollTo({top:0})}
 function useBackup(d){
   if(d&&d.kids&&d.active&&d.kids[d.active]){Object.values(d.kids).forEach(fixKid);FAM=d;S=FAM.kids[FAM.active];persist();return Object.values(d.kids).reduce((n,k)=>n+(k.ops||[]).length,0)}
   if(d&&d.child&&Array.isArray(d.ops)){S=fixKid(d);save();return d.ops.length}
@@ -513,21 +564,25 @@ function renderChrome(){
     <button class="who" data-action="kids" aria-label="Дети: переключить или добавить"><b>${esc(S.child.name)} <svg class="dd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>${kidList().length>1?`<span class="kc">${kidList().length}</span>`:''}</b><span>${ageText()} · ${stageNow()[2].toLowerCase()}</span></button>
     <button class="ibtn" data-action="settings" aria-label="Профиль и настройки">${I('gear')}</button>`
     :`<div class="who"><b style="font-size:20px;font-weight:800;letter-spacing:-.02em">KidFund</b></div>`;
-  document.getElementById('tabs').innerHTML=TABS.map(([k,l,i])=>k==='add'
+  document.getElementById('tabs').innerHTML='<span class="tabind" id="tabind"></span>'+TABS.map(([k,l,i])=>k==='add'
     ?`<button class="plus" data-action="addop" aria-label="Новая запись">${I('plus')}</button>`
-    :`<button data-tab="${k}" ${tab===k?'aria-current="page"':''}>${I(i)}${l}</button>`).join('');
+    :`<button data-tab="${k}" ${tab===k?'aria-current="page"':''} class="${POP===k?'just':''}">${I(i)}${l}</button>`).join('');POP=null;
 }
 function render(){
   applySkin();renderChrome();
   const v=document.getElementById('view');
-  v.classList.remove('view');void v.offsetWidth;v.classList.add('view');
-  if(!S.child.name){v.innerHTML=welcome();return}
+  const anim=ANIM&&!REDUCED;ANIM=false;
+  v.classList.remove('enter');if(anim){void v.offsetWidth;v.classList.add('enter')}
+  if(!S.child.name){v.innerHTML=welcome();v.classList.add('enter');return}
   const days=S.backupAt?Math.floor((Date.now()-S.backupAt)/864e5):null;
   const needBackup=!S.example&&S.ops.length>0&&(days===null||days>=30);
   const demo=S.example?`<div class="demo"><span><b>Это пример.</b> Квартира за 50 000 $ и вклад — посмотрите, как всё работает.</span><button class="btn sm" data-action="start">Начать своё</button></div>`
     :needBackup&&tab==='home'?`<div class="demo"><span><b>${days===null?'Копия ещё не сохранялась.':'Копии '+days+' '+plural(days,['день','дня','дней'])+'.'}</b> Сохраните её в iCloud Drive, чтобы не потерять записи.</span><button class="btn sm" data-action="backupfile">Сохранить</button></div>`:'';
   v.innerHTML=demo+({home,ops:opsView,assets:assetsView,plan:planView}[tab])();
+  if(anim)[...v.children].forEach((c,i)=>c.style.setProperty('--i',Math.min(i,12)));
   if(tab==='plan')bindChart();
+  if(tab==='home')countUpHero(anim);
+  moveTabInd();
 }
 function stageNow(){const a=ageYears();return STAGES.find(s=>a>=s[0]&&a<s[1])||STAGES[STAGES.length-1]}
 
@@ -535,9 +590,9 @@ function stageNow(){const a=ageYears();return STAGES.find(s=>a>=s[0]&&a<s[1])||S
 function welcome(){
   return `<div class="welcome">
   <div class="art"><div class="lg1">KidFund</div>
-  <svg viewBox="0 0 320 120" aria-hidden="true"><path d="M8 108 C70 104 110 92 150 74 S240 30 312 12" fill="none" stroke="currentColor" stroke-opacity=".9" stroke-width="3" stroke-linecap="round"/>
+  <svg viewBox="0 0 320 120" aria-hidden="true"><path class="draw" pathLength="1" d="M8 108 C70 104 110 92 150 74 S240 30 312 12" fill="none" stroke="currentColor" stroke-opacity=".9" stroke-width="3" stroke-linecap="round"/>
   <path d="M8 108 C70 104 110 92 150 74 S240 30 312 12 V118 H8Z" fill="currentColor" fill-opacity=".1"/>
-  ${[[8,108,'0'],[110,92,'7'],[200,52,'14'],[312,12,'18']].map(([x,y,t])=>`<circle cx="${x}" cy="${y}" r="5" fill="currentColor"/><text x="${Math.min(300,Math.max(10,x))}" y="${y-12}" font-size="12" font-weight="700" fill="currentColor" text-anchor="${x>300?'end':x<20?'start':'middle'}" font-family="Onest,sans-serif">${t}</text>`).join('')}</svg></div>
+  ${[[8,108,'0'],[110,92,'7'],[200,52,'14'],[312,12,'18']].map(([x,y,t],di)=>`<circle style="--d:${di};transform-origin:${x}px ${y}px" cx="${x}" cy="${y}" r="5" fill="currentColor"/><text x="${Math.min(300,Math.max(10,x))}" y="${y-12}" font-size="12" font-weight="700" fill="currentColor" text-anchor="${x>300?'end':x<20?'start':'middle'}" font-family="Onest,sans-serif">${t}</text>`).join('')}</svg></div>
   <h1>Капитал ребёнка с первого дня</h1>
   <p>Записывайте подарки, пособия, материнский капитал и покупки на имя ребёнка. KidFund покажет, сколько у него будет к 18 годам.</p>
   <form id="welcomeForm" class="card">
@@ -554,7 +609,7 @@ function spark(pts){
   const W=300,H=64;const max=Math.max(...pts.map(p=>p.net),1),min=Math.min(0,...pts.map(p=>p.net));
   const x0=pts[0].age;const X=a=>(a-x0)/((18-x0)||1)*(W-8)+4,Y=v=>H-6-(v-min)/(max-min||1)*(H-14);
   const d=pts.map((p,i)=>(i?'L':'M')+X(p.age).toFixed(1)+' '+Y(p.net).toFixed(1)).join(' ');const e=pts[pts.length-1];
-  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d} L${X(e.age)} ${H} L${X(x0)} ${H}Z" fill="currentColor" fill-opacity=".12"/><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d} L${X(e.age)} ${H} L${X(x0)} ${H}Z" fill="currentColor" fill-opacity=".12"/><path class="draw" pathLength="1" d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
 }
 function home(){
   const c=compute(),pts=forecast(),e=pts[pts.length-1],st=stageNow(),a=ageYears();
@@ -565,7 +620,8 @@ function home(){
   const recent=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,4);
   return `<section class="hero">
     <div class="hk"><span class="k">Капитал ребёнка</span><div class="curs" role="group" aria-label="Валюта">${CURS.map(c=>`<button data-cur="${c}" aria-pressed="${S.child.base===c}" aria-label="${c}">${SYM[c]}</button>`).join('')}</div></div>
-    <div class="v money">${money(c.net)}</div>
+    <span class="orb o1"></span><span class="orb o2"></span>
+    <div class="v money" id="heroV" data-v="${c.net}">${money(c.net)}</div>
     ${spark(pts)}
     <div class="row"><span class="pill">К 18 годам ≈ <span class="money">${money(e.net,null,true)}</span></span><span class="muted">+${money(c.rentM,null,true)} в месяц</span></div>
   </section>
@@ -705,8 +761,8 @@ function chartSVG(pts){
   ${g}${xt}<text x="${W-R}" y="${H-7}" text-anchor="end" font-size="10.5" fill="var(--muted)" dx="0" dy="0"></text>
   <path d="${line('net')} L${X(e.age)} ${Y(0)} L${X(x0)} ${Y(0)}Z" fill="url(#ga)"/>
   <path d="${line('debt')}" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="5 4" stroke-linecap="round"/>
-  <path d="${line('liquid')}" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="${line('net')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="draw" pathLength="1" d="${line('liquid')}" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="draw" pathLength="1" d="${line('net')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
   <circle cx="${X(e.age)}" cy="${Y(e.net)}" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="3"/>
   <g id="cur" opacity="0"><line id="cl" y1="${T}" y2="${H-B}" stroke="var(--ink)" stroke-opacity=".3" stroke-width="1"/><circle id="cd" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></g></svg>`;
 }
@@ -720,7 +776,7 @@ function bindChart(){
   w.addEventListener('pointermove',move);w.addEventListener('pointerdown',move);
   w.addEventListener('pointerleave',()=>{tip.hidden=true;svg.querySelector('#cur').setAttribute('opacity','0')});
 }
-function goalRing(p,ok){const r=24,c=2*Math.PI*r;return `<div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="6"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="${ok?'var(--accent)':'var(--amber)'}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(c*p/100).toFixed(1)} ${c.toFixed(1)}"/></svg><b>${Math.round(p)}%</b></div>`}
+function goalRing(p,ok){const r=24,c=2*Math.PI*r;return `<div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="6"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="${ok?'var(--accent)':'var(--amber)'}" stroke-width="6" stroke-linecap="round" class="arc" stroke-dasharray="${(c*p/100).toFixed(1)} ${c.toFixed(1)}"/></svg><b>${Math.round(p)}%</b></div>`}
 function planView(){
   const pts=forecast(),e=pts[pts.length-1];const other={debt:'fund',fund:'debt',split:'debt'}[S.fc.rule];const ae=forecast(other).slice(-1)[0];
   const RULES={debt:'Сначала долг',split:'50 / 50',fund:'Всё в фонд'};const RL={debt:'сначала гасить долг',split:'50/50 долг и фонд',fund:'всё в фонд'};
@@ -750,12 +806,28 @@ function planView(){
 
 /* sheets */
 const scrim=document.getElementById('scrim'),sheet=document.getElementById('sheet');
+let SHEET_T=null;
 function openSheet(title,body,foot){
+  clearTimeout(SHEET_T);scrim.classList.remove('out');sheet.style.transform='';sheet.classList.remove('dragging','snap');
   sheet.innerHTML=`<div class="grab"></div><div class="shh"><h3 id="shTitle">${title}</h3><button class="ibtn" data-action="close" aria-label="Закрыть">${I('x')}</button></div><div class="shb" id="shb">${body}</div>${foot?`<div class="shf">${foot}</div>`:''}`;
   scrim.hidden=false;document.body.style.overflow='hidden';
   const f=sheet.querySelector('.shb input:not([type=radio]),.shb select');setTimeout(()=>f&&f.focus({preventScroll:true}),60);
 }
-function closeSheet(){scrim.hidden=true;sheet.innerHTML='';document.body.style.overflow=''}
+function closeSheet(){
+  if(scrim.hidden)return;document.body.style.overflow='';
+  const done=()=>{scrim.hidden=true;scrim.classList.remove('out');sheet.innerHTML='';sheet.style.transform='';sheet.classList.remove('dragging','snap')};
+  if(REDUCED){done();return}
+  if(sheet.style.transform){sheet.classList.add('snap');sheet.style.transform='translateY(110%)'}else scrim.classList.add('out');
+  clearTimeout(SHEET_T);SHEET_T=setTimeout(done,240);
+}
+(function(){ // swipe the sheet down by its header to close
+  let y0=null,dy=0;
+  sheet.addEventListener('touchstart',e=>{if(!e.target.closest('.grab,.shh')||e.target.closest('button'))return;y0=e.touches[0].clientY;dy=0;sheet.classList.add('dragging');sheet.classList.remove('snap')},{passive:true});
+  sheet.addEventListener('touchmove',e=>{if(y0===null)return;dy=Math.max(0,e.touches[0].clientY-y0);sheet.style.transform=`translateY(${dy}px)`},{passive:true});
+  const end=()=>{if(y0===null)return;y0=null;sheet.classList.remove('dragging');
+    if(dy>110)closeSheet();else{sheet.classList.add('snap');sheet.style.transform='';setTimeout(()=>sheet.classList.remove('snap'),360)}};
+  sheet.addEventListener('touchend',end);sheet.addEventListener('touchcancel',end);
+})();
 scrim.addEventListener('click',e=>{if(e.target===scrim)closeSheet()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!scrim.hidden)closeSheet()});
 function toast(t){const el=document.getElementById('toast');el.innerHTML=I('check')+esc(t);el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2200)}
@@ -832,7 +904,8 @@ function saveOp(type){
     const a={id:uid(),name,kind:g('b_kind'),cur:o.cur,price:amount,value:amount,share:Math.min(100,Math.max(1,+g('b_share')||100)),rent:+g('b_rent')||0,cost:+g('b_cost')||0,growth:+g('b_growth')||0,rate:+g('b_rate')||0};
     S.assets.push(a);o.assetId=a.id;o.parts=parts;
   }
-  S.ops.push(o);save();closeSheet();render();toast('Запись сохранена');
+  S.ops.push(o);save();closeSheet();render();
+  if(type==='in'||type==='income'||type==='buy'){confetti();toast(type==='in'?'+'+money(amount,o.cur)+' в капитал':type==='buy'?'Актив добавлен':'Доход записан')}else toast('Запись сохранена');
 }
 function opDetail(id){
   const o=S.ops.find(x=>x.id===id);if(!o)return;const m=opMeta(o);
@@ -893,7 +966,7 @@ function settings(){
 /* events */
 document.addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;
-  if(t.dataset.tab){tab=t.dataset.tab;render();window.scrollTo({top:0});return}
+  if(t.dataset.tab){if(t.dataset.tab!==tab){POP=t.dataset.tab;ANIM=true}tab=t.dataset.tab;render();window.scrollTo({top:0,behavior:REDUCED?'auto':'smooth'});return}
   if(t.dataset.newop)return openOp(t.dataset.newop);
   if(t.dataset.op)return opDetail(t.dataset.op);
   if(t.dataset.asset)return assetEdit(t.dataset.asset);
@@ -957,6 +1030,39 @@ render();
 /* color themes */
 const SKINS=[['emerald','Изумруд','#0E6E59','#0A5747','#fff'],['ocean','Океан','#1A57B5','#123F86','#fff'],['lavender','Лаванда','#6347BE','#4A3396','#fff'],['rose','Роза','#C23E78','#952C5B','#fff'],['graphite','Графит','#262B31','#14181C','#F3E6C8']];
 function applySkin(){const k=S.skin||'emerald';const r=document.documentElement;if(k==='emerald')delete r.dataset.skin;else r.dataset.skin=k}
+/* motion helpers */
+function moveTabInd(){
+  const ind=document.getElementById('tabind');const act=document.querySelector('.tabbar button[aria-current="page"]');if(!ind)return;
+  if(!act){ind.style.opacity='0';return}ind.style.opacity='1';
+  const box=act.parentElement.getBoundingClientRect(),r=act.getBoundingClientRect();
+  const left=r.left-box.left+4,w=r.width-8;
+  if(moveTabInd.last&&!REDUCED){ind.style.transition='none';ind.style.left=moveTabInd.last.left+'px';ind.style.width=moveTabInd.last.w+'px';void ind.offsetWidth;ind.style.transition=''}
+  ind.style.left=left+'px';ind.style.width=w+'px';moveTabInd.last={left,w};
+}
+addEventListener('resize',()=>{moveTabInd.last=null;moveTabInd()});
+function countUpHero(anim){
+  const el=document.getElementById('heroV');if(!el)return;const to=+el.dataset.v;const key=FAM.active+S.child.base;
+  const from=LASTV[key]===undefined?(anim?0:to):LASTV[key];LASTV[key]=to;
+  if(REDUCED||Math.abs(to-from)<1)return;
+  const t0=performance.now(),D=Math.min(1400,600+Math.log10(Math.abs(to-from)+10)*120);
+  const step=now=>{const p=Math.min(1,(now-t0)/D),e=1-Math.pow(1-p,4);el.textContent=money(from+(to-from)*e);if(p<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step);
+}
+function confetti(){
+  if(REDUCED)return;
+  const cv=document.createElement('canvas');cv.id='confetti';document.body.appendChild(cv);
+  const dpr=Math.min(2,devicePixelRatio||1),W=innerWidth,H=innerHeight;cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');g.scale(dpr,dpr);
+  const cs=getComputedStyle(document.documentElement);const cols=['--accent','--amber','--c-pgift','--blue','--violet','--c-gov'].map(v=>cs.getPropertyValue(v).trim()||'#0E7B63');
+  const P=Array.from({length:90},()=>({x:W/2+(Math.random()-.5)*60,y:H*.38,vx:(Math.random()-.5)*11,vy:-Math.random()*13-5,r:Math.random()*6+4,a:Math.random()*6,va:(Math.random()-.5)*.35,c:cols[Math.random()*cols.length|0],s:Math.random()<.5}));
+  const t0=performance.now();
+  const frame=now=>{const t=now-t0;g.clearRect(0,0,W,H);
+    for(const p of P){p.vy+=.38;p.vx*=.985;p.x+=p.vx;p.y+=p.vy;p.a+=p.va;g.save();g.globalAlpha=Math.max(0,1-t/1700);g.translate(p.x,p.y);g.rotate(p.a);g.fillStyle=p.c;
+      if(p.s)g.fillRect(-p.r/2,-p.r/4,p.r,p.r/2);else{g.beginPath();g.arc(0,0,p.r/2.6,0,7);g.fill()}g.restore()}
+    if(t<1700)requestAnimationFrame(frame);else cv.remove()};
+  requestAnimationFrame(frame);
+}
+addEventListener('scroll',()=>{const h=document.getElementById('hdr');if(h)h.classList.toggle('scrolled',scrollY>8)},{passive:true});
+
 /* children: switch and add */
 function kidsSheet(){
   const rows=kidList().map(([id,k])=>withKid(k,()=>{const c=compute();return {id,k,net:c.net,age:ageText(),photo:k.child.photo,name:k.child.name}}));
