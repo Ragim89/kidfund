@@ -360,6 +360,7 @@ input[type=number]{-moz-appearance:textfield}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
+const APP_VERSION='1.7';
 const KEY='kidfund.v1';
 const CURS=['RUB','USD','EUR','TRY','KZT'];
 const SYM={RUB:'₽',USD:'$',EUR:'€',TRY:'₺',KZT:'₸'};
@@ -885,7 +886,8 @@ function settings(){
   <div class="f" style="margin-top:10px"><label for="s_json">Данные KidFund</label><textarea id="s_json" spellcheck="false">${esc(JSON.stringify(FAM))}</textarea></div>
   <div class="g2"><button class="btn ghost" data-action="copyjson">Скопировать</button><button class="btn ghost" data-action="importjson">Загрузить из поля</button></div></details>
   <div class="grp">Сброс</div>
-  <div class="g2"><button class="btn ghost" data-action="loadExample">Открыть пример</button><button class="btn danger" data-action="wipe" data-step="1">${kidList().length>1?'Удалить '+esc(S.child.name):'Удалить данные'}</button></div>`);
+  <div class="g2"><button class="btn ghost" data-action="loadExample">Открыть пример</button><button class="btn danger" data-action="wipe" data-step="1">${kidList().length>1?'Удалить '+esc(S.child.name):'Удалить данные'}</button></div>
+  <p class="fine" style="text-align:center;margin-top:18px">KidFund · версия ${APP_VERSION}</p>`);
 }
 
 /* events */
@@ -1016,7 +1018,15 @@ async function refreshRates(force){
 }
 refreshRates();
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshRates()});
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+if('serviceWorker' in navigator){
+  const hadController=!!navigator.serviceWorker.controller;let reloading=false;
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadController&&!reloading){reloading=true;location.reload()}});
+  window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(reg=>{
+    const check=()=>reg.update().catch(()=>{});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
+    setInterval(check,30*60e3);
+  }).catch(()=>{}));
+}
 </script>
 </body>
 </html>
