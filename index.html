@@ -41,6 +41,24 @@
   --amber:#EDB343; --amber-soft:#30260F; --red:#EE7C64; --red-soft:#381D17; --blue:#86A2EE; --blue-soft:#18223D; --violet:#AE9AEC; --violet-soft:#241F3A;
   --c-gift:#36C29C; --c-pgift:#7FD6BB; --c-matcap:#EDB343; --c-gov:#F1D27A; --c-loan:#EE7C64; --c-earn:#86A2EE; --c-income:#AE9AEC; --c-sav:#6F7C77;
   --shadow:0 0 0 1px #1E2925; color-scheme:dark}
+/* color themes (skins): only accent-family tokens change; light + dark for each */
+:root[data-skin="ocean"]{--accent:#1D5FC2;--accent-soft:#E3ECFA;--on-accent:#FFFFFF;--hero-bg:#1A57B5;--hero-bg-2:#123F86;--hero-ink:#FFFFFF;--c-gift:#1D5FC2;--c-pgift:#6C9BE0}
+:root[data-skin="lavender"]{--accent:#6A4FC6;--accent-soft:#ECE7FA;--on-accent:#FFFFFF;--hero-bg:#6347BE;--hero-bg-2:#4A3396;--hero-ink:#FFFFFF;--c-gift:#6A4FC6;--c-pgift:#A08CE3}
+:root[data-skin="rose"]{--accent:#C23D79;--accent-soft:#FBE5EF;--on-accent:#FFFFFF;--hero-bg:#C23E78;--hero-bg-2:#952C5B;--hero-ink:#FFFFFF;--c-gift:#C23D79;--c-pgift:#E48AB2}
+:root[data-skin="graphite"]{--accent:#A8740F;--accent-soft:#F6EEDC;--on-accent:#FFFFFF;--hero-bg:#262B31;--hero-bg-2:#14181C;--hero-ink:#F3E6C8;--c-gift:#A8740F;--c-pgift:#D7AE5E}
+@media (prefers-color-scheme: dark){
+  :root[data-skin="ocean"]:not([data-theme="light"]){--accent:#6FA2F2;--accent-soft:#16284A;--on-accent:#071A36;--hero-bg:#173A6B;--hero-bg-2:#0F2849;--hero-ink:#EAF1FD;--c-gift:#6FA2F2;--c-pgift:#9BBDF3}
+  :root[data-skin="lavender"]:not([data-theme="light"]){--accent:#A992F0;--accent-soft:#261F42;--on-accent:#170C33;--hero-bg:#34296A;--hero-bg-2:#241C4C;--hero-ink:#F1ECFF;--c-gift:#A992F0;--c-pgift:#C7B8F6}
+  :root[data-skin="rose"]:not([data-theme="light"]){--accent:#EE86B3;--accent-soft:#3E1A2B;--on-accent:#330A1C;--hero-bg:#5C2341;--hero-bg-2:#3F172C;--hero-ink:#FDEBF3;--c-gift:#EE86B3;--c-pgift:#F3B3CF}
+  :root[data-skin="graphite"]:not([data-theme="light"]){--accent:#E2B04F;--accent-soft:#33290F;--on-accent:#241A04;--hero-bg:#1E2328;--hero-bg-2:#101316;--hero-ink:#F3E6C8;--c-gift:#E2B04F;--c-pgift:#EDCC85}
+}
+.skins{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:6px}
+.skins button{border:0;background:none;display:grid;justify-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-2);padding:4px 0}
+.skins i{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 2px var(--surface),0 0 0 2px transparent;transition:box-shadow .15s}
+.skins i svg{width:20px;height:20px;opacity:0}
+.skins button[aria-pressed="true"] i{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink)}
+.skins button[aria-pressed="true"] i svg{opacity:1}
+.skins button[aria-pressed="true"]{color:var(--ink)}
 [hidden]{display:none!important}
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;font-size:14px;overscroll-behavior-y:none}
@@ -481,7 +499,7 @@ function renderChrome(){
     :`<button data-tab="${k}" ${tab===k?'aria-current="page"':''}>${I(i)}${l}</button>`).join('');
 }
 function render(){
-  renderChrome();
+  applySkin();renderChrome();
   const v=document.getElementById('view');
   v.classList.remove('view');void v.offsetWidth;v.classList.add('view');
   if(!S.child.name){v.innerHTML=welcome();return}
@@ -832,7 +850,9 @@ function settings(){
     <label class="btn sm" for="s_photo">${S.child.photo?'Сменить фото':'Добавить фото'}</label>
     ${S.child.photo?'<button class="btn sm ghost" data-action="rmphoto">Убрать фото</button>':'<span class="hint" style="margin:0">Из галереи или камеры</span>'}</div>
     <input type="file" id="s_photo" accept="image/*" hidden></div>
-  <div class="g2"><div class="f"><label for="s_name">Имя ребёнка</label><input id="s_name" value="${esc(S.child.name)}"></div>
+  <div class="grp" style="margin-top:4px">Цвет оформления</div>
+  <div class="skins" role="group" aria-label="Цвет оформления">${SKINS.map(([k,l,a,b,ink])=>`<button data-skin="${k}" aria-pressed="${(S.skin||'emerald')===k}"><i style="background:linear-gradient(150deg,${a},${b});color:${ink}">${I('check')}</i>${l}</button>`).join('')}</div>
+  <div class="g2" style="margin-top:12px"><div class="f"><label for="s_name">Имя ребёнка</label><input id="s_name" value="${esc(S.child.name)}"></div>
   <div class="f"><label for="s_birth">Дата рождения</label><input id="s_birth" type="date" value="${S.child.birth}"></div></div>
   <div class="f"><label for="s_base">Основная валюта</label>${curSel('s_base',S.child.base,'Основная валюта')}</div>
   <div class="grp">Курсы к рублю</div>
@@ -863,6 +883,7 @@ document.addEventListener('click',e=>{
   if(t.dataset.saveasset){const a=asset(t.dataset.saveasset);const v=id=>{const el=document.getElementById(id);return el&&el.value!==''?+el.value:null};
     a.value=v('e_value')??a.value;a.share=Math.min(100,Math.max(1,v('e_share')||a.share));
     ['rent','cost','growth','rate'].forEach(k=>{const x=v('e_'+k);if(x!==null)a[k]=x});save();closeSheet();render();return toast('Актив обновлён')}
+  if(t.dataset.skin){S.skin=t.dataset.skin;save();applySkin();render();settings();sheet.querySelector('#shb').scrollTop=0;return}
   if(t.dataset.cur){const c=t.dataset.cur;if(c!==S.child.base){S.fc.topup=Math.round(toBase(S.fc.topup,S.child.base)*(S.rates[S.child.base]||1)/(S.rates[c]||1));S.child.base=c;save();render()}return}
   if(t.dataset.fPeriod){F.period=t.dataset.fPeriod;F.who=null;return render()}
   if(t.dataset.fSrc){F.src=t.dataset.fSrc;F.who=null;return render()}
@@ -904,6 +925,9 @@ document.addEventListener('submit',e=>{if(e.target.id!=='welcomeForm')return;e.p
   S=blank(n,b);save();tab='home';render();toast('Профиль создан')});
 render();
 
+/* color themes */
+const SKINS=[['emerald','Изумруд','#0E6E59','#0A5747','#fff'],['ocean','Океан','#1A57B5','#123F86','#fff'],['lavender','Лаванда','#6347BE','#4A3396','#fff'],['rose','Роза','#C23E78','#952C5B','#fff'],['graphite','Графит','#262B31','#14181C','#F3E6C8']];
+function applySkin(){const k=S.skin||'emerald';const r=document.documentElement;if(k==='emerald')delete r.dataset.skin;else r.dataset.skin=k}
 /* child photo: center-cropped, resized, stored inside the profile */
 function avaInner(){return S.child.photo?`<img src="${S.child.photo}" alt="">`:esc((S.child.name||'?').trim()[0]||'?').toUpperCase()}
 document.addEventListener('change',e=>{
