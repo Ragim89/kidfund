@@ -130,6 +130,10 @@ svg{flex:none}
 .person .pv{text-align:right;white-space:nowrap}
 .person .pv b{display:block;font-weight:700}
 .person .pv span{font-size:12px;color:var(--muted)}
+.who{border:0;background:none;text-align:left;padding:0;color:inherit}
+.who b{display:flex!important;align-items:center;gap:4px}
+.who .dd{width:16px;height:16px;color:var(--muted);flex:none}
+.who .kc{font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 7px}
 /* quick actions */
 .qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
 .qa button{border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:12px 4px 10px;display:grid;justify-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink-2)}
@@ -427,9 +431,23 @@ function example(){
 }
 function blank(name,birth){return {example:false,child:{name,birth,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},assets:[],ops:[],goals:[],fc:{rule:'debt',fundRate:8,topup:0}}}
 let S=null,tab='home';
+const FKEY='kidfund.family';
+let FAM=null;
 function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return null}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
-S=load()||example();
+function persist(){try{localStorage.setItem(FKEY,JSON.stringify(FAM))}catch(e){}}
+function save(){FAM.kids[FAM.active]=S;persist()}
+function fixKid(d){d.goals=d.goals||[];d.assets=d.assets||[];d.ops=d.ops||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};d.rates=d.rates||{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16};return d}
+try{FAM=JSON.parse(localStorage.getItem(FKEY))}catch(e){}
+if(!FAM||!FAM.kids||!FAM.kids[FAM.active]){const id='k'+uid();FAM={active:id,kids:{[id]:load()||example()}}}
+S=fixKid(FAM.kids[FAM.active]);
+function kidList(){return Object.entries(FAM.kids).filter(([,k])=>k.child&&k.child.name)}
+function withKid(k,fn){const p=S;S=k;try{return fn()}finally{S=p}}
+function switchKid(id){if(!FAM.kids[id])return;FAM.active=id;S=fixKid(FAM.kids[id]);persist();F.period='all';F.src='all';F.who=null;F.from=F.to='';tab='home';closeSheet();render();window.scrollTo({top:0})}
+function useBackup(d){
+  if(d&&d.kids&&d.active&&d.kids[d.active]){Object.values(d.kids).forEach(fixKid);FAM=d;S=FAM.kids[FAM.active];persist();return Object.values(d.kids).reduce((n,k)=>n+(k.ops||[]).length,0)}
+  if(d&&d.child&&Array.isArray(d.ops)){S=fixKid(d);save();return d.ops.length}
+  throw new Error('bad');
+}
 if(S.goals===undefined)S.goals=[];
 if(tab==='fc'||tab==='goals')tab='plan';
 
@@ -491,7 +509,7 @@ function renderChrome(){
   const has=!!S.child.name;
   document.getElementById('tabbar').hidden=!has;
   document.getElementById('hdr').innerHTML=has?`<button class="ava" data-action="settings" aria-label="Профиль ребёнка">${avaInner()}</button>
-    <div class="who"><b>${esc(S.child.name)}</b><span>${ageText()} · ${stageNow()[2].toLowerCase()}</span></div>
+    <button class="who" data-action="kids" aria-label="Дети: переключить или добавить"><b>${esc(S.child.name)} <svg class="dd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 10 5 5 5-5"/></svg>${kidList().length>1?`<span class="kc">${kidList().length}</span>`:''}</b><span>${ageText()} · ${stageNow()[2].toLowerCase()}</span></button>
     <button class="ibtn" data-action="settings" aria-label="Профиль и настройки">${I('gear')}</button>`
     :`<div class="who"><b style="font-size:20px;font-weight:800;letter-spacing:-.02em">KidFund</b></div>`;
   document.getElementById('tabs').innerHTML=TABS.map(([k,l,i])=>k==='add'
@@ -864,10 +882,10 @@ function settings(){
   <div class="g2"><button class="btn" data-action="backupfile">Сохранить копию</button><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer" for="s_file">Восстановить из файла</label></div>
   <input type="file" id="s_file" accept=".json,application/json" hidden>
   <details style="margin-top:12px"><summary class="hint" style="cursor:pointer;margin:0">Копия текстом</summary>
-  <div class="f" style="margin-top:10px"><label for="s_json">Данные KidFund</label><textarea id="s_json" spellcheck="false">${esc(JSON.stringify(S))}</textarea></div>
+  <div class="f" style="margin-top:10px"><label for="s_json">Данные KidFund</label><textarea id="s_json" spellcheck="false">${esc(JSON.stringify(FAM))}</textarea></div>
   <div class="g2"><button class="btn ghost" data-action="copyjson">Скопировать</button><button class="btn ghost" data-action="importjson">Загрузить из поля</button></div></details>
   <div class="grp">Сброс</div>
-  <div class="g2"><button class="btn ghost" data-action="loadExample">Открыть пример</button><button class="btn danger" data-action="wipe" data-step="1">Удалить данные</button></div>`);
+  <div class="g2"><button class="btn ghost" data-action="loadExample">Открыть пример</button><button class="btn danger" data-action="wipe" data-step="1">${kidList().length>1?'Удалить '+esc(S.child.name):'Удалить данные'}</button></div>`);
 }
 
 /* events */
@@ -883,6 +901,7 @@ document.addEventListener('click',e=>{
   if(t.dataset.saveasset){const a=asset(t.dataset.saveasset);const v=id=>{const el=document.getElementById(id);return el&&el.value!==''?+el.value:null};
     a.value=v('e_value')??a.value;a.share=Math.min(100,Math.max(1,v('e_share')||a.share));
     ['rent','cost','growth','rate'].forEach(k=>{const x=v('e_'+k);if(x!==null)a[k]=x});save();closeSheet();render();return toast('Актив обновлён')}
+  if(t.dataset.kid){if(t.dataset.kid===FAM.active)closeSheet();else switchKid(t.dataset.kid);return}
   if(t.dataset.skin){S.skin=t.dataset.skin;save();applySkin();render();settings();sheet.querySelector('#shb').scrollTop=0;return}
   if(t.dataset.cur){const c=t.dataset.cur;if(c!==S.child.base){S.fc.topup=Math.round(toBase(S.fc.topup,S.child.base)*(S.rates[S.child.base]||1)/(S.rates[c]||1));S.child.base=c;save();render()}return}
   if(t.dataset.fPeriod){F.period=t.dataset.fPeriod;F.who=null;return render()}
@@ -899,16 +918,24 @@ document.addEventListener('click',e=>{
   if(act==='savegoal'){const n=document.getElementById('g_name').value.trim(),a=+document.getElementById('g_amount').value,age=+document.getElementById('g_age').value;
     if(!n||!(a>0))return err('Введите название и сумму цели.');if(!(age>=1&&age<=18))return err('Возраст цели — от 1 до 18 лет.');
     S.goals.push({id:uid(),name:n,amount:a,cur:document.getElementById('g_cur').value,age});save();closeSheet();render();toast('Цель добавлена')}
-  if(act==='start'){S=blank('','');save();tab='home';render();setTimeout(()=>document.getElementById('w_name')?.focus(),60)}
-  if(act==='loadExample'){S=example();save();tab='home';closeSheet();render();toast('Открыт пример')}
+  if(act==='start'){const others=Object.keys(FAM.kids).filter(id=>id!==FAM.active&&!FAM.kids[id].example&&FAM.kids[id].child&&FAM.kids[id].child.name);if(others.length){delete FAM.kids[FAM.active];return switchKid(others[0])}S=blank('','');save();tab='home';render();setTimeout(()=>document.getElementById('w_name')?.focus(),60)}
+  if(act==='loadExample'){if(S.child.name&&!S.example){const id='k'+uid();FAM.active=id;S=example();}else S=example();save();tab='home';closeSheet();render();toast('Открыт пример')}
   if(act==='savesettings'){S.child.name=document.getElementById('s_name').value.trim()||S.child.name;S.child.birth=document.getElementById('s_birth').value||S.child.birth;S.child.base=document.getElementById('s_base').value;
     CURS.filter(c=>c!=='RUB').forEach(c=>{const v=+document.getElementById('r_'+c).value;if(v>0)S.rates[c]=v});save();closeSheet();render();toast('Профиль сохранён')}
   if(act==='copyjson'){const ta=document.getElementById('s_json');const fb=()=>{ta.focus();ta.select();toast('Текст выделен — скопируйте его')};
     try{navigator.clipboard.writeText(ta.value).then(()=>toast('Скопировано'),fb)}catch(_){fb()}}
   if(act==='backupfile')backupFile();
+  if(act==='kids')kidsSheet();
+  if(act==='addkid')addKidForm();
+  if(act==='savekid'){const n=document.getElementById('k_name').value.trim(),b=document.getElementById('k_birth').value;if(!n||!b)return err('Введите имя и дату рождения.');
+    const k=blank(n,b);k.child.base=S.child.base;k.rates={...S.rates};k.ratesAt=S.ratesAt;k.ratesDate=S.ratesDate;const id='k'+uid();FAM.kids[id]=k;
+    if(S.example&&kidList().length>1){delete FAM.kids[FAM.active]}
+    persist();switchKid(id);toast('Профиль создан: '+n)}
   if(act==='rmphoto'){delete S.child.photo;save();render();settings();toast('Фото убрано')}
-  if(act==='importjson'){try{const d=JSON.parse(document.getElementById('s_json').value);if(!d.child||!Array.isArray(d.ops))throw 0;d.goals=d.goals||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};S=d;save();closeSheet();render();toast('Данные загружены')}catch(_){err('Не получилось прочитать текст. Вставьте копию целиком.')}}
-  if(act==='wipe'){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить всё?';return}S=blank('','');save();closeSheet();tab='home';render()}
+  if(act==='importjson'){try{const d=JSON.parse(document.getElementById('s_json').value);useBackup(d);closeSheet();tab='home';render();toast('Данные загружены')}catch(_){err('Не получилось прочитать текст. Вставьте копию целиком.')}}
+  if(act==='wipe'){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить?';return}
+    const others=Object.keys(FAM.kids).filter(id=>id!==FAM.active&&FAM.kids[id].child&&FAM.kids[id].child.name);
+    if(others.length){delete FAM.kids[FAM.active];switchKid(others[0]);toast('Профиль удалён')}else{S=blank('','');save();closeSheet();tab='home';render()}}
 });
 document.addEventListener('change',e=>{
   if(e.target.name==='otype'){const v=document.getElementById('o_amount')?.value;openOp(e.target.value);if(v)document.getElementById('o_amount').value=v;syncBuy();return}
@@ -928,6 +955,22 @@ render();
 /* color themes */
 const SKINS=[['emerald','Изумруд','#0E6E59','#0A5747','#fff'],['ocean','Океан','#1A57B5','#123F86','#fff'],['lavender','Лаванда','#6347BE','#4A3396','#fff'],['rose','Роза','#C23E78','#952C5B','#fff'],['graphite','Графит','#262B31','#14181C','#F3E6C8']];
 function applySkin(){const k=S.skin||'emerald';const r=document.documentElement;if(k==='emerald')delete r.dataset.skin;else r.dataset.skin=k}
+/* children: switch and add */
+function kidsSheet(){
+  const rows=kidList().map(([id,k])=>withKid(k,()=>{const c=compute();return {id,k,net:c.net,age:ageText(),photo:k.child.photo,name:k.child.name}}));
+  const base=S.child.base;const total=rows.reduce((s,r)=>s+withKid(FAM.kids[r.id],()=>{const c=compute();return c.net*(S.rates[S.child.base]||1)})/(S.rates[base]||1),0);
+  openSheet('Дети',`${rows.length>1?`<div class="card" style="box-shadow:none;background:var(--surface-2);margin-bottom:12px"><div class="cap">Капитал всех детей</div><div class="money" style="font-size:24px;font-weight:800;letter-spacing:-.02em">${money(total,base)}</div></div>`:''}
+  <div class="list" style="box-shadow:none;border:1px solid var(--line)">${rows.map(r=>`<button class="item" data-kid="${r.id}"><span class="ava" style="width:46px;height:46px">${r.photo?`<img src="${r.photo}" alt="">`:esc(r.name.trim()[0]||'?').toUpperCase()}</span>
+    <span class="tx"><b>${esc(r.name)}${r.k.example?' · пример':''}</b><span>${r.age}</span></span><span class="am"><span class="money">${money(r.net,r.k.child.base,true)}</span>${r.id===FAM.active?`<small class="pos">открыт</small>`:''}</span></button>`).join('')}</div>
+  <button class="addrow" data-action="addkid">${I('plus')}Добавить ребёнка</button>
+  <p class="fine">У каждого ребёнка свои записи, активы, цели, фото и цвет.</p>`);
+}
+function addKidForm(){
+  openSheet('Новый ребёнок',`<div class="f"><label for="k_name">Имя</label><input id="k_name" placeholder="Например, Аня" autocomplete="off"></div>
+  <div class="f"><label for="k_birth">Дата рождения</label><input id="k_birth" type="date" value="${today()}"></div>
+  <p class="hint">Курсы валют и основная валюта возьмутся от текущего профиля.</p>`,
+  `<button class="btn ghost" data-action="kids">Назад</button><button class="btn" data-action="savekid">Добавить</button>`);
+}
 /* child photo: center-cropped, resized, stored inside the profile */
 function avaInner(){return S.child.photo?`<img src="${S.child.photo}" alt="">`:esc((S.child.name||'?').trim()[0]||'?').toUpperCase()}
 document.addEventListener('change',e=>{
@@ -942,21 +985,20 @@ document.addEventListener('change',e=>{
 
 /* backup to a file (iCloud Drive via the share sheet) and restore */
 async function backupFile(){
-  const name='kidfund-'+(S.child.name||'data').replace(/[^\wа-яё-]+/gi,'_')+'-'+today()+'.json';
-  const prev=S.backupAt;S.backupAt=Date.now();
-  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const name='kidfund-'+(kidList().length>1?'family':(S.child.name||'data').replace(/[^\wа-яё-]+/gi,'_'))+'-'+today()+'.json';
+  const prev=S.backupAt;const now=Date.now();S.backupAt=now;save();Object.values(FAM.kids).forEach(k=>k.backupAt=now);
+  const blob=new Blob([JSON.stringify(FAM,null,1)],{type:'application/json'});
   const file=new File([blob],name,{type:'application/json'});
-  const done=()=>{save();closeSheet();render();toast('Копия сохранена')};
+  const done=()=>{persist();closeSheet();render();toast('Копия сохранена')};
   try{
     if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Копия KidFund'});return done()}
-  }catch(e){if(e&&e.name==='AbortError'){S.backupAt=prev;return}}
+  }catch(e){if(e&&e.name==='AbortError'){Object.values(FAM.kids).forEach(k=>k.backupAt=prev);persist();return}}
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);done();
 }
 document.addEventListener('change',e=>{
   if(e.target.id!=='s_file'||!e.target.files[0])return;
-  const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.child||!Array.isArray(d.ops))throw 0;
-    d.goals=d.goals||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};S=d;save();closeSheet();tab='home';render();toast('Записи восстановлены: '+d.ops.length)}
+  const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);const n=useBackup(d);closeSheet();tab='home';render();toast('Записи восстановлены: '+n)}
     catch(_){err('Это не файл копии KidFund. Выберите файл kidfund-….json.')}};
   r.readAsText(e.target.files[0]);
 });
@@ -968,8 +1010,8 @@ async function refreshRates(force){
     if(!force&&S.ratesAt&&Date.now()-S.ratesAt<6*3600e3)return;
     const r=await fetch('https://www.cbr-xml-daily.ru/daily_json.js',{cache:'no-store'});if(!r.ok)return;
     const d=await r.json();const V=d.Valute||{};let changed=false;
-    for(const c of ['USD','EUR','TRY','KZT']){const v=V[c];if(v&&v.Value&&v.Nominal){S.rates[c]=+(v.Value/v.Nominal).toFixed(4);changed=true}}
-    if(changed){S.ratesAt=Date.now();S.ratesDate=(d.Date||'').slice(0,10);save();if(scrim.hidden)render()}
+    for(const c of ['USD','EUR','TRY','KZT']){const v=V[c];if(v&&v.Value&&v.Nominal){const r=+(v.Value/v.Nominal).toFixed(4);Object.values(FAM.kids).forEach(k=>{k.rates=k.rates||{RUB:1};k.rates[c]=r});changed=true}}
+    if(changed){const at=Date.now(),dt=(d.Date||'').slice(0,10);Object.values(FAM.kids).forEach(k=>{k.ratesAt=at;k.ratesDate=dt});persist();if(scrim.hidden)render()}
   }catch(e){}
 }
 refreshRates();
