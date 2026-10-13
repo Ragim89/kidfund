@@ -458,7 +458,10 @@ function render(){
   const v=document.getElementById('view');
   v.classList.remove('view');void v.offsetWidth;v.classList.add('view');
   if(!S.child.name){v.innerHTML=welcome();return}
-  const demo=S.example?`<div class="demo"><span><b>Это пример.</b> Квартира за 50 000 $ и вклад — посмотрите, как всё работает.</span><button class="btn sm" data-action="start">Начать своё</button></div>`:'';
+  const days=S.backupAt?Math.floor((Date.now()-S.backupAt)/864e5):null;
+  const needBackup=!S.example&&S.ops.length>0&&(days===null||days>=30);
+  const demo=S.example?`<div class="demo"><span><b>Это пример.</b> Квартира за 50 000 $ и вклад — посмотрите, как всё работает.</span><button class="btn sm" data-action="start">Начать своё</button></div>`
+    :needBackup&&tab==='home'?`<div class="demo"><span><b>${days===null?'Копия ещё не сохранялась.':'Копии '+days+' '+plural(days,['день','дня','дней'])+'.'}</b> Сохраните её в iCloud Drive, чтобы не потерять записи.</span><button class="btn sm" data-action="backupfile">Сохранить</button></div>`:'';
   v.innerHTML=demo+({home,ops:opsView,assets:assetsView,plan:planView}[tab])();
   if(tab==='plan')bindChart();
 }
@@ -756,9 +759,12 @@ function settings(){
   <p class="hint">${S.ratesDate?`Курсы ЦБ РФ на ${new Date(S.ratesDate).toLocaleDateString('ru-RU')}, обновляются автоматически. Можно поправить вручную.`:'Курсы обновятся по ЦБ РФ автоматически, когда появится интернет. Можно задать вручную.'}</p>
   <button class="btn wide" data-action="savesettings">Сохранить профиль</button>
   <div class="grp">Резервная копия</div>
-  <p class="hint">Данные хранятся только на этом телефоне. Скопируйте текст в Заметки — так их можно перенести или восстановить.</p>
-  <div class="f"><label for="s_json">Данные KidFund</label><textarea id="s_json" spellcheck="false">${esc(JSON.stringify(S))}</textarea></div>
-  <div class="g2"><button class="btn ghost" data-action="copyjson">Скопировать</button><button class="btn ghost" data-action="importjson">Загрузить из поля</button></div>
+  <p class="hint">Записи хранятся только на этом телефоне. Сохраняйте копию в iCloud Drive раз в месяц — с ней всё восстановится на любом телефоне.${S.backupAt?` Последняя копия: ${new Date(S.backupAt).toLocaleDateString('ru-RU')}.`:' Копия ещё не сохранялась.'}</p>
+  <div class="g2"><button class="btn" data-action="backupfile">Сохранить копию</button><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer" for="s_file">Восстановить из файла</label></div>
+  <input type="file" id="s_file" accept=".json,application/json" hidden>
+  <details style="margin-top:12px"><summary class="hint" style="cursor:pointer;margin:0">Копия текстом</summary>
+  <div class="f" style="margin-top:10px"><label for="s_json">Данные KidFund</label><textarea id="s_json" spellcheck="false">${esc(JSON.stringify(S))}</textarea></div>
+  <div class="g2"><button class="btn ghost" data-action="copyjson">Скопировать</button><button class="btn ghost" data-action="importjson">Загрузить из поля</button></div></details>
   <div class="grp">Сброс</div>
   <div class="g2"><button class="btn ghost" data-action="loadExample">Открыть пример</button><button class="btn danger" data-action="wipe" data-step="1">Удалить данные</button></div>`);
 }
@@ -793,6 +799,7 @@ document.addEventListener('click',e=>{
     CURS.filter(c=>c!=='RUB').forEach(c=>{const v=+document.getElementById('r_'+c).value;if(v>0)S.rates[c]=v});save();closeSheet();render();toast('Профиль сохранён')}
   if(act==='copyjson'){const ta=document.getElementById('s_json');const fb=()=>{ta.focus();ta.select();toast('Текст выделен — скопируйте его')};
     try{navigator.clipboard.writeText(ta.value).then(()=>toast('Скопировано'),fb)}catch(_){fb()}}
+  if(act==='backupfile')backupFile();
   if(act==='importjson'){try{const d=JSON.parse(document.getElementById('s_json').value);if(!d.child||!Array.isArray(d.ops))throw 0;d.goals=d.goals||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};S=d;save();closeSheet();render();toast('Данные загружены')}catch(_){err('Не получилось прочитать текст. Вставьте копию целиком.')}}
   if(act==='wipe'){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить всё?';return}S=blank('','');save();closeSheet();tab='home';render()}
 });
@@ -809,6 +816,28 @@ document.addEventListener('submit',e=>{if(e.target.id!=='welcomeForm')return;e.p
   const n=document.getElementById('w_name').value.trim(),b=document.getElementById('w_birth').value;if(!n||!b)return;
   S=blank(n,b);save();tab='home';render();toast('Профиль создан')});
 render();
+
+/* backup to a file (iCloud Drive via the share sheet) and restore */
+async function backupFile(){
+  const name='kidfund-'+(S.child.name||'data').replace(/[^\wа-яё-]+/gi,'_')+'-'+today()+'.json';
+  const prev=S.backupAt;S.backupAt=Date.now();
+  const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
+  const file=new File([blob],name,{type:'application/json'});
+  const done=()=>{save();closeSheet();render();toast('Копия сохранена')};
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Копия KidFund'});return done()}
+  }catch(e){if(e&&e.name==='AbortError'){S.backupAt=prev;return}}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);done();
+}
+document.addEventListener('change',e=>{
+  if(e.target.id!=='s_file'||!e.target.files[0])return;
+  const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.child||!Array.isArray(d.ops))throw 0;
+    d.goals=d.goals||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};S=d;save();closeSheet();tab='home';render();toast('Записи восстановлены: '+d.ops.length)}
+    catch(_){err('Это не файл копии KidFund. Выберите файл kidfund-….json.')}};
+  r.readAsText(e.target.files[0]);
+});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 
 /* live CBR rates (works when hosted on its own domain) */
 async function refreshRates(force){
