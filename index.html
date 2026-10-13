@@ -56,7 +56,12 @@ svg{flex:none}
 
 /* header */
 .hdr{display:flex;align-items:center;gap:12px;padding-block:8px 6px}
-.ava{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:17px;flex:none}
+.ava{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:17px;flex:none;border:0;padding:0;overflow:hidden}
+.ava img{width:100%;height:100%;object-fit:cover;display:block}
+.photo{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.photo .ava{width:84px;height:84px;font-size:32px;box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--accent-soft)}
+.photo .pb{display:grid;gap:8px;justify-items:start}
+.photo .pb label{cursor:pointer;display:inline-flex;align-items:center}
 .who{flex:1;min-width:0}
 .who b{display:block;font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .who span{font-size:13px;color:var(--muted)}
@@ -467,7 +472,7 @@ const TABS=[['home','Главная','home'],['ops','Операции','list'],[
 function renderChrome(){
   const has=!!S.child.name;
   document.getElementById('tabbar').hidden=!has;
-  document.getElementById('hdr').innerHTML=has?`<div class="ava" aria-hidden="true">${esc(S.child.name.trim()[0]||'?').toUpperCase()}</div>
+  document.getElementById('hdr').innerHTML=has?`<button class="ava" data-action="settings" aria-label="Профиль ребёнка">${avaInner()}</button>
     <div class="who"><b>${esc(S.child.name)}</b><span>${ageText()} · ${stageNow()[2].toLowerCase()}</span></div>
     <button class="ibtn" data-action="settings" aria-label="Профиль и настройки">${I('gear')}</button>`
     :`<div class="who"><b style="font-size:20px;font-weight:800;letter-spacing:-.02em">KidFund</b></div>`;
@@ -823,7 +828,11 @@ function goalForm(){
   `<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-action="savegoal">Добавить</button>`);
 }
 function settings(){
-  openSheet('Профиль',`<div class="g2"><div class="f"><label for="s_name">Имя ребёнка</label><input id="s_name" value="${esc(S.child.name)}"></div>
+  openSheet('Профиль',`<div class="photo"><div class="ava">${avaInner()}</div><div class="pb">
+    <label class="btn sm" for="s_photo">${S.child.photo?'Сменить фото':'Добавить фото'}</label>
+    ${S.child.photo?'<button class="btn sm ghost" data-action="rmphoto">Убрать фото</button>':'<span class="hint" style="margin:0">Из галереи или камеры</span>'}</div>
+    <input type="file" id="s_photo" accept="image/*" hidden></div>
+  <div class="g2"><div class="f"><label for="s_name">Имя ребёнка</label><input id="s_name" value="${esc(S.child.name)}"></div>
   <div class="f"><label for="s_birth">Дата рождения</label><input id="s_birth" type="date" value="${S.child.birth}"></div></div>
   <div class="f"><label for="s_base">Основная валюта</label>${curSel('s_base',S.child.base,'Основная валюта')}</div>
   <div class="grp">Курсы к рублю</div>
@@ -876,6 +885,7 @@ document.addEventListener('click',e=>{
   if(act==='copyjson'){const ta=document.getElementById('s_json');const fb=()=>{ta.focus();ta.select();toast('Текст выделен — скопируйте его')};
     try{navigator.clipboard.writeText(ta.value).then(()=>toast('Скопировано'),fb)}catch(_){fb()}}
   if(act==='backupfile')backupFile();
+  if(act==='rmphoto'){delete S.child.photo;save();render();settings();toast('Фото убрано')}
   if(act==='importjson'){try{const d=JSON.parse(document.getElementById('s_json').value);if(!d.child||!Array.isArray(d.ops))throw 0;d.goals=d.goals||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};S=d;save();closeSheet();render();toast('Данные загружены')}catch(_){err('Не получилось прочитать текст. Вставьте копию целиком.')}}
   if(act==='wipe'){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить всё?';return}S=blank('','');save();closeSheet();tab='home';render()}
 });
@@ -893,6 +903,18 @@ document.addEventListener('submit',e=>{if(e.target.id!=='welcomeForm')return;e.p
   const n=document.getElementById('w_name').value.trim(),b=document.getElementById('w_birth').value;if(!n||!b)return;
   S=blank(n,b);save();tab='home';render();toast('Профиль создан')});
 render();
+
+/* child photo: center-cropped, resized, stored inside the profile */
+function avaInner(){return S.child.photo?`<img src="${S.child.photo}" alt="">`:esc((S.child.name||'?').trim()[0]||'?').toUpperCase()}
+document.addEventListener('change',e=>{
+  if(e.target.id!=='s_photo'||!e.target.files[0])return;
+  const file=e.target.files[0];const url=URL.createObjectURL(file);const img=new Image();
+  img.onload=()=>{const N=320,s=Math.min(img.naturalWidth,img.naturalHeight);const c=document.createElement('canvas');c.width=c.height=N;
+    c.getContext('2d').drawImage(img,(img.naturalWidth-s)/2,(img.naturalHeight-s)/2,s,s,0,0,N,N);URL.revokeObjectURL(url);
+    S.child.photo=c.toDataURL('image/jpeg',.82);save();render();settings();toast('Фото добавлено')};
+  img.onerror=()=>{URL.revokeObjectURL(url);err('Не получилось открыть это фото. Попробуйте другое.')};
+  img.src=url;
+});
 
 /* backup to a file (iCloud Drive via the share sheet) and restore */
 async function backupFile(){
