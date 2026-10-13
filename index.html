@@ -1,0 +1,829 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Учёт капитала ребёнка с рождения до 18 лет: подарки, пособия, материнский капитал, активы и прогноз.">
+<meta name="theme-color" content="#F1F4F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A100E" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="KidFund">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>KidFund</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: native-feeling phone app — header with child, stacked cards, bottom tab bar with center "+" and bottom sheets */
+:root{
+  --bg:#F1F4F3; --surface:#FFFFFF; --surface-2:#F6F8F7; --ink:#0F1714; --ink-2:#3B4843; --muted:#78857F; --line:#E3E8E6;
+  --accent:#0F7B63; --accent-soft:#E1F1EB; --on-accent:#FFFFFF;
+  --hero-bg:#0E6E59; --hero-bg-2:#0A5747; --hero-ink:#FFFFFF;
+  --amber:#B97A09; --amber-soft:#FBF0D9; --red:#C0412D; --red-soft:#FBE6E1; --blue:#3C61C4; --blue-soft:#E5EBFA; --violet:#7560BE; --violet-soft:#EEEAFA;
+  --c-gift:#0F7B63; --c-pgift:#5DB59A; --c-matcap:#D3940F; --c-gov:#E5C04F; --c-loan:#C0412D; --c-earn:#3C61C4; --c-income:#7560BE; --c-sav:#9AA6A1;
+  --shadow:0 1px 2px rgba(15,23,20,.04),0 6px 20px rgba(15,23,20,.06);
+  --font:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0A100E; --surface:#131B18; --surface-2:#19231F; --ink:#EDF3F0; --ink-2:#C2CDC8; --muted:#87958F; --line:#232E2A;
+  --accent:#36C29C; --accent-soft:#143429; --on-accent:#03231A;
+  --hero-bg:#124437; --hero-bg-2:#0D3329; --hero-ink:#EAF8F2;
+  --amber:#EDB343; --amber-soft:#30260F; --red:#EE7C64; --red-soft:#381D17; --blue:#86A2EE; --blue-soft:#18223D; --violet:#AE9AEC; --violet-soft:#241F3A;
+  --c-gift:#36C29C; --c-pgift:#7FD6BB; --c-matcap:#EDB343; --c-gov:#F1D27A; --c-loan:#EE7C64; --c-earn:#86A2EE; --c-income:#AE9AEC; --c-sav:#6F7C77;
+  --shadow:0 0 0 1px #1E2925; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0A100E; --surface:#131B18; --surface-2:#19231F; --ink:#EDF3F0; --ink-2:#C2CDC8; --muted:#87958F; --line:#232E2A;
+  --accent:#36C29C; --accent-soft:#143429; --on-accent:#03231A;
+  --hero-bg:#124437; --hero-bg-2:#0D3329; --hero-ink:#EAF8F2;
+  --amber:#EDB343; --amber-soft:#30260F; --red:#EE7C64; --red-soft:#381D17; --blue:#86A2EE; --blue-soft:#18223D; --violet:#AE9AEC; --violet-soft:#241F3A;
+  --c-gift:#36C29C; --c-pgift:#7FD6BB; --c-matcap:#EDB343; --c-gov:#F1D27A; --c-loan:#EE7C64; --c-earn:#86A2EE; --c-income:#AE9AEC; --c-sav:#6F7C77;
+  --shadow:0 0 0 1px #1E2925; color-scheme:dark}
+[hidden]{display:none!important}
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font-size:14px;overscroll-behavior-y:none}
+img{max-width:100%}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.4;padding-inline:16px;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+svg{flex:none}
+.num,.money{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.app{max-width:500px;margin:0 auto;padding-block:8px 120px}
+
+/* header */
+.hdr{display:flex;align-items:center;gap:12px;padding-block:8px 6px}
+.ava{width:44px;height:44px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:17px;flex:none}
+.who{flex:1;min-width:0}
+.who b{display:block;font-size:17px;font-weight:700;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who span{font-size:13px;color:var(--muted)}
+.ibtn{width:42px;height:42px;border-radius:14px;border:0;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;flex:none}
+.ibtn svg{width:20px;height:20px}
+.ptitle{font-size:28px;font-weight:800;letter-spacing:-.025em;margin:14px 0 14px;text-wrap:balance}
+
+/* example banner */
+.demo{display:flex;align-items:center;gap:12px;background:var(--amber-soft);border-radius:16px;padding:10px 10px 10px 14px;margin:8px 0 14px;font-size:13px;color:var(--ink-2)}
+.demo span{flex:1;min-width:0}
+.demo b{color:var(--ink)}
+
+/* cards */
+.card{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);padding:16px}
+.sec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:26px 2px 10px}
+.sec h2{font-size:18px;font-weight:700;letter-spacing:-.015em;margin:0}
+.sec a,.sec button.link{font-size:14px;font-weight:600;color:var(--accent);background:none;border:0;padding:0}
+.cap{font-size:12px;color:var(--muted);font-weight:500}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:18px 18px 14px;color:var(--hero-ink);background:linear-gradient(160deg,var(--hero-bg),var(--hero-bg-2))}
+.hero .k{font-size:13px;opacity:.78;font-weight:500}
+.hero .v{font-size:clamp(30px,9vw,40px);font-weight:800;letter-spacing:-.035em;margin:2px 0 0;line-height:1.1;overflow-wrap:anywhere}
+.hero .spark{display:block;width:100%;height:64px;margin:10px 0 6px}
+.hero .row{display:flex;justify-content:space-between;gap:10px;font-size:13px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);border-radius:999px;padding:5px 10px;font-weight:600;font-size:13px}
+.hero .muted{opacity:.75}
+
+/* quick actions */
+.qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.qa button{border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:12px 4px 10px;display:grid;justify-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.qa .ic{width:40px;height:40px}
+
+/* icon circles */
+.ic{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;flex:none}
+.ic svg{width:20px;height:20px}
+.t-in{background:var(--accent-soft);color:var(--accent)}
+.t-gov{background:var(--amber-soft);color:var(--amber)}
+.t-loan{background:var(--red-soft);color:var(--red)}
+.t-buy{background:var(--blue-soft);color:var(--blue)}
+.t-inc{background:var(--violet-soft);color:var(--violet)}
+.t-exp{background:var(--surface-2);color:var(--ink-2)}
+
+/* stats */
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.stat{background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:12px;min-width:0}
+.stat .k{font-size:12px;color:var(--muted);font-weight:500}
+.stat .v{font-size:clamp(13px,3.8vw,16px);font-weight:700;letter-spacing:-.02em;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+input[type=number]{-moz-appearance:textfield}
+.stat.warn .v{color:var(--red)}
+
+/* journey */
+.journey .bar{position:relative;height:10px;border-radius:5px;background:var(--surface-2);margin:18px 0 8px;display:flex;overflow:hidden;gap:2px}
+.journey .seg{height:100%;background:var(--line)}
+.journey .seg.past{background:var(--accent)}
+.journey .seg.cur{background:linear-gradient(90deg,var(--accent) var(--p),var(--line) var(--p))}
+.journey .marks{position:relative;height:16px}
+.journey .marks span{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--muted)}
+.journey .marks span:first-child{transform:none}
+.journey .marks span:last-child{transform:translateX(-100%)}
+.journey .head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.journey .stg{font-weight:700;font-size:16px}
+.journey p{margin:6px 0 0;color:var(--ink-2);font-size:14px}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.badge.amber{background:var(--amber-soft);color:var(--amber)}
+.badge.red{background:var(--red-soft);color:var(--red)}
+
+/* source breakdown */
+.stack{display:flex;height:12px;border-radius:6px;overflow:hidden;gap:2px;margin:4px 0 14px}
+.stack i{display:block;height:100%}
+.legend{display:grid;gap:10px}
+.lg{display:flex;align-items:center;gap:10px;font-size:14px}
+.lg .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.lg .n{flex:1;min-width:0}
+.lg .p{color:var(--muted);font-size:13px;width:42px;text-align:right}
+.lg .m{font-weight:600;white-space:nowrap}
+
+/* ledger */
+.month{display:flex;justify-content:space-between;align-items:baseline;margin:20px 4px 8px;font-size:13px;color:var(--muted);font-weight:600}
+.month:first-child{margin-top:4px}
+.list{background:var(--surface);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:12px 14px;width:100%;text-align:left;border:0;background:none;position:relative}
+.item+.item::before{content:"";position:absolute;left:68px;right:0;top:0;height:1px;background:var(--line)}
+.item:active{background:var(--surface-2)}
+.item .tx{flex:1;min-width:0}
+.item .tx b{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .tx span{display:block;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item .am{text-align:right;font-weight:700;white-space:nowrap}
+.item .am small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.pos{color:var(--accent)} .negc{color:var(--red)}
+.chev{color:var(--muted);width:16px;height:16px}
+
+/* assets */
+.acard{display:grid;gap:14px;width:100%;text-align:left;border:0}
+.acard .top{display:flex;gap:12px;align-items:center}
+.acard .nm{flex:1;min-width:0}
+.acard .nm b{display:block;font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.acard .nm span{font-size:13px;color:var(--muted)}
+.acard .val{text-align:right}
+.acard .val b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em;white-space:nowrap}
+.acard .val span{font-size:12px;font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px}
+.fact{background:var(--surface-2);border-radius:12px;padding:8px 10px;min-width:0}
+.fact span{display:block;font-size:11px;color:var(--muted);font-weight:500}
+.fact b{font-size:14px;font-weight:600;white-space:nowrap}
+.fund .stack{margin:8px 0 10px;height:8px}
+.fund .legend{gap:6px}
+.fund .lg{font-size:13px}
+.cards{display:grid;gap:12px}
+
+/* plan */
+.segc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--surface-2);border-radius:14px;padding:4px;gap:4px}
+.segc label{position:relative}
+.segc input{position:absolute;opacity:0;pointer-events:none}
+.segc span{display:block;text-align:center;padding:9px 4px;border-radius:11px;font-size:13px;font-weight:600;color:var(--ink-2);line-height:1.2}
+.segc input:checked+span{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.segc input:focus-visible+span{outline:2px solid var(--accent)}
+.knobs{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-top:12px}
+.chartwrap{position:relative;margin-top:16px;touch-action:pan-y;user-select:none}
+.chartwrap svg{display:block;width:100%;height:auto}
+.tip{position:absolute;top:0;transform:translateX(-50%);background:var(--ink);color:var(--bg);border-radius:12px;padding:7px 10px;font-size:12px;white-space:nowrap;pointer-events:none;line-height:1.35}
+.tip b{font-size:14px}
+.keys{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-top:8px}
+.keys i{display:inline-block;width:12px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+.big3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.big3 .stat{box-shadow:none;background:var(--surface-2)}
+.callout{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-size:13px;color:var(--ink-2);background:var(--surface-2);border-radius:14px;padding:10px 12px}
+.callout svg{width:18px;height:18px;color:var(--accent);margin-top:1px}
+.fine{font-size:12px;color:var(--muted);margin:10px 4px 0}
+
+/* goals */
+.goal{display:flex;gap:14px;align-items:center}
+.ring{width:56px;height:56px;flex:none;position:relative}
+.ring svg{width:56px;height:56px;transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;font-weight:700}
+.goal .gx{flex:1;min-width:0}
+.goal .gx b{display:block;font-weight:700;font-size:16px;overflow-wrap:anywhere}
+.goal .gx span{font-size:13px;color:var(--muted)}
+.goal .gs{text-align:right;display:grid;gap:6px;justify-items:end}
+.goal .gs b{white-space:nowrap}
+.xbtn{border:0;background:none;color:var(--muted);font-size:12px;font-weight:600;padding:2px 0}
+
+/* buttons */
+.btn{border:0;border-radius:14px;padding:13px 18px;font-weight:700;font-size:15px;background:var(--accent);color:var(--on-accent);min-height:48px}
+.btn.sm{padding:8px 14px;font-size:13px;min-height:36px;border-radius:11px}
+.btn.ghost{background:var(--surface-2);color:var(--ink)}
+.btn.danger{background:var(--red-soft);color:var(--red)}
+.btn.wide{width:100%}
+.addrow{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:1.5px dashed var(--line);background:none;border-radius:18px;padding:14px;font-weight:600;color:var(--accent);margin-top:12px}
+.addrow svg{width:18px;height:18px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:0 12px calc(8px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;pointer-events:none}
+.tabbar .in{pointer-events:auto;max-width:500px;width:100%;display:grid;grid-template-columns:repeat(5,1fr);align-items:center;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);border-radius:24px;box-shadow:var(--shadow),0 10px 30px rgba(0,0,0,.08);padding:6px}
+.tabbar button{border:0;background:none;display:grid;justify-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--muted);padding:6px 0;border-radius:16px}
+.tabbar button svg{width:23px;height:23px}
+.tabbar button[aria-current="page"]{color:var(--accent)}
+.tabbar .plus{width:52px;height:52px;border-radius:18px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;justify-self:center;padding:0}
+.tabbar .plus svg{width:26px;height:26px}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(4,10,8,.42);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:540px;max-height:94%;display:flex;flex-direction:column;border-radius:26px 26px 0 0;overflow:hidden}
+.grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:8px auto 2px;flex:none}
+.shh{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 16px 10px;flex:none}
+.shh h3{margin:0;font-size:20px;font-weight:800;letter-spacing:-.02em}
+.shh .ibtn{box-shadow:none;background:var(--surface-2);width:34px;height:34px;border-radius:50%}
+.shb{padding:4px 16px 16px;overflow:auto;flex:1}
+.shf{padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);display:flex;gap:8px;flex:none;background:var(--surface)}
+.shf .btn{flex:1}
+.types{display:flex;gap:8px;overflow-x:auto;padding:2px 0 12px;margin:0 -16px;padding-inline:16px;scrollbar-width:none}
+.types::-webkit-scrollbar{display:none}
+.types label{position:relative;flex:none}
+.types input{position:absolute;opacity:0;pointer-events:none}
+.types span{display:flex;align-items:center;gap:7px;padding:9px 13px;border-radius:999px;background:var(--surface-2);font-size:14px;font-weight:600;white-space:nowrap}
+.types span svg{width:17px;height:17px}
+.types input:checked+span{background:var(--ink);color:var(--bg)}
+.types input:focus-visible+span{outline:2px solid var(--accent)}
+.amt{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-radius:18px;padding:10px 12px 10px 16px;margin:4px 0 14px}
+.amt input{flex:1;min-width:0;border:0;background:none;font-size:32px;font-weight:800;letter-spacing:-.03em;padding:4px 0;outline:none}
+.amt select{border:0;background:var(--surface);border-radius:12px;padding:9px 10px;font-weight:700}
+.f{display:grid;gap:6px;margin-bottom:12px;min-width:0}
+.f label,.f .l{font-size:13px;font-weight:600;color:var(--ink-2)}
+.f input,.f select,.f textarea{width:100%;min-width:0;border:1.5px solid var(--line);border-radius:14px;padding:12px 13px;background:var(--surface);min-height:48px;font-size:16px}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--accent);outline:none}
+.f textarea{min-height:110px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.hint{font-size:13px;color:var(--muted);margin:-4px 0 12px}
+.grp{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 10px}
+.parts{display:grid;gap:8px}
+.part{background:var(--surface-2);border-radius:16px;padding:10px;display:grid;grid-template-columns:minmax(0,1fr) 34px;gap:8px}
+.part .r2{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:8px}
+.part select,.part input{width:100%;min-width:0;border:0;border-radius:11px;padding:10px;background:var(--surface);font-size:15px;min-height:42px}
+.part .rm{border:0;background:none;color:var(--muted);display:grid;place-items:center;border-radius:10px}
+.part .rm svg{width:18px;height:18px}
+.meter{margin:10px 0 4px}
+.meter .track{height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.meter .track i{display:block;height:100%;border-radius:4px;background:var(--amber);transition:width .2s}
+.meter .track i.full{background:var(--accent)}
+.meter .track i.over{background:var(--red)}
+.meter .txt{display:flex;justify-content:space-between;font-size:13px;margin-top:6px;color:var(--ink-2)}
+.err{background:var(--red-soft);color:var(--red);border-radius:12px;padding:10px 12px;font-size:14px;font-weight:600;margin-bottom:12px}
+.rows{background:var(--surface-2);border-radius:16px;overflow:hidden}
+.rows div{display:flex;justify-content:space-between;gap:14px;padding:12px 14px;font-size:14px}
+.rows div+div{border-top:1px solid var(--line)}
+.rows span{color:var(--muted)}
+.rows b{text-align:right;font-weight:600;overflow-wrap:anywhere}
+.dhead{text-align:center;padding:4px 0 16px}
+.dhead .ic{margin:0 auto 10px;width:56px;height:56px}
+.dhead .ic svg{width:26px;height:26px}
+.dhead b{display:block;font-size:30px;font-weight:800;letter-spacing:-.03em}
+.dhead span{color:var(--muted);font-size:14px}
+
+/* welcome */
+.welcome{padding-top:10px}
+.welcome .art{border-radius:26px;background:linear-gradient(160deg,var(--hero-bg),var(--hero-bg-2));color:var(--hero-ink);padding:22px 20px 10px;overflow:hidden}
+.welcome .art .lg1{font-weight:800;font-size:18px;letter-spacing:-.02em}
+.welcome .art svg{display:block;width:100%;height:auto;margin-top:12px}
+.welcome h1{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:22px 0 8px;text-wrap:balance}
+.welcome p{color:var(--ink-2);margin:0 0 18px;font-size:15px;max-width:44ch}
+.welcome .card{display:grid;gap:4px}
+.welcome .alt{background:none;border:0;color:var(--accent);font-weight:600;padding:14px;width:100%}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(96px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 16px;border-radius:14px;font-size:14px;font-weight:600;z-index:30;display:flex;gap:8px;align-items:center;max-width:calc(100% - 32px)}
+.toast svg{width:18px;height:18px;color:var(--accent)}
+.empty{text-align:center;padding:26px 16px;color:var(--muted);font-size:14px}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+
+@media (max-width:370px){.stats,.big3{grid-template-columns:1fr 1fr}.qa button{font-size:11px}.knobs{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:no-preference){
+  .sheet{animation:up .28s cubic-bezier(.2,.8,.2,1)}
+  .scrim{animation:fade .2s ease-out}
+  .view{animation:fade .18s ease-out}
+  @keyframes up{from{transform:translateY(40px)}to{transform:none}}
+  @keyframes fade{from{opacity:.4}to{opacity:1}}
+  .qa button,.item,.acard,.btn{transition:transform .12s}
+  .qa button:active,.acard:active,.btn:active{transform:scale(.97)}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="hdr" id="hdr"></header>
+  <main id="view" class="view"></main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="Разделы"><div class="in" id="tabs"></div></nav>
+<div class="scrim" id="scrim" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle" id="sheet"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const KEY='kidfund.v1';
+const CURS=['RUB','USD','EUR','TRY','KZT'];
+const SYM={RUB:'₽',USD:'$',EUR:'€',TRY:'₺',KZT:'₸'};
+const SRC={
+  gift:{l:'Подарок',from:'От кого',ph:'Бабушка Нина',t:'t-in',c:'--c-gift',i:'gift'},
+  parentGift:{l:'Подарок родителей',from:'Кто из родителей',ph:'Папа',t:'t-in',c:'--c-pgift',i:'heart'},
+  matcap:{l:'Материнский капитал',t:'t-gov',c:'--c-matcap',i:'shield'},
+  gov:{l:'Пособие или выплата',from:'Какая выплата',ph:'Единовременное пособие',t:'t-gov',c:'--c-gov',i:'bank'},
+  loan:{l:'Заём родителей',from:'Кто дал взаймы',ph:'Папа',t:'t-loan',c:'--c-loan',i:'handshake'},
+  earn:{l:'Заработок ребёнка',from:'Чем заработал',ph:'Продал поделки',t:'t-buy',c:'--c-earn',i:'star'},
+  savings:{l:'Накопления ребёнка',t:'t-exp',c:'--c-sav',i:'wallet'}
+};
+const KIND={realty:'Недвижимость',deposit:'Банковский вклад',fund:'Акции и фонды',other:'Другое'};
+const KIND_I={realty:'home',deposit:'bank',fund:'chart',other:'box'};
+const TYPES={in:['Поступление','down','t-in'],buy:['Покупка','home','t-buy'],income:['Доход','up','t-inc'],expense:['Расход','out','t-exp'],repay:['Возврат займа','back','t-loan']};
+const STAGES=[
+  [0,3,'Младенчество','Собираем подарки и выплаты, делаем крупную покупку на долгий срок.'],
+  [3,7,'Дошкольный возраст','Доход от активов реинвестируем, ребёнок знакомится с копилкой.'],
+  [7,12,'Начальная школа','Карманные деньги и первые записи ребёнка в учёт.'],
+  [12,14,'Подростковый возраст','Ребёнок видит свой баланс, копим на образование.'],
+  [14,16,'Старшая школа','Свой доход, сам вносит записи. Деньги на учёбу — в надёжные инструменты.'],
+  [16,18.01,'Перед совершеннолетием','Фиксируем результат и готовим передачу капитала в 18 лет.']
+];
+const P={
+  home:'<path d="M3.5 10.5 12 4l8.5 6.5V19a1.5 1.5 0 0 1-1.5 1.5h-4v-6h-6v6H5A1.5 1.5 0 0 1 3.5 19z"/>',
+  list:'<rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 8.5h8M8 12h8M8 15.5h5"/>',
+  chart:'<path d="M4 19.5h16"/><path d="m5 15 4.5-4.5 3.5 3 6-6.5"/><path d="M15 7h4v4"/>',
+  target:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v2.2M12 19.3v2.2M4.2 4.2l1.6 1.6M18.2 18.2l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.2 19.8l1.6-1.6M18.2 5.8l1.6-1.6"/>',
+  x:'<path d="M6 6l12 12M18 6 6 18"/>',
+  down:'<path d="M12 4v12M6.5 10.5 12 16l5.5-5.5"/><path d="M5 20h14"/>',
+  up:'<path d="m4 16 5-5 4 3 7-7"/><path d="M15 7h5v5"/>',
+  out:'<path d="M12 20V8M6.5 13.5 12 8l5.5 5.5"/><path d="M5 4h14"/>',
+  back:'<path d="M9 7 4.5 11.5 9 16"/><path d="M5 11.5h9.5a5 5 0 0 1 0 10H12"/>',
+  gift:'<rect x="3.5" y="8.5" width="17" height="4" rx="1"/><path d="M5 12.5v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7M12 8.5v12"/><path d="M12 8.5S10.5 4 8 4.5 7 8.5 12 8.5zm0 0s1.5-4.5 4-4 1 4-4 4z"/>',
+  heart:'<path d="M12 20s-7.5-4.5-7.5-10A4.3 4.3 0 0 1 12 7.6 4.3 4.3 0 0 1 19.5 10c0 5.5-7.5 10-7.5 10z"/>',
+  shield:'<path d="M12 3.5 5 6v5.5c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  bank:'<path d="M3.5 9 12 4l8.5 5"/><path d="M5.5 9.5v8M10 9.5v8M14 9.5v8M18.5 9.5v8M3.5 20h17"/>',
+  handshake:'<path d="M8 13.5 11 16.5a1.5 1.5 0 0 0 2-2.2"/><path d="m3 11 4-4 3 1 2-1.5 2 0 7 5-2 2.5"/><path d="M13 14.3l1.5 1.5a1.5 1.5 0 0 0 2.2-2L14 11"/><path d="M3 11l3.5 4"/>',
+  star:'<path d="m12 4 2.4 5 5.3.6-4 3.7 1.1 5.3L12 16l-4.8 2.6 1.1-5.3-4-3.7 5.3-.6z"/>',
+  wallet:'<rect x="3.5" y="6.5" width="17" height="13" rx="2.5"/><path d="M16 13h4.5M6.5 6.5l9-3"/>',
+  box:'<path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5z"/><path d="M4 7.5 12 11l8-3.5M12 11v9"/>',
+  trash:'<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>',
+  info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  chev:'<path d="m9 6 6 6-6 6"/>'
+};
+const I=(n,cls)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" ${cls?`class="${cls}"`:''} aria-hidden="true">${P[n]}</svg>`;
+const uid=()=>Math.random().toString(36).slice(2,10);
+const today=()=>new Date().toISOString().slice(0,10);
+
+function example(){
+  const birth=new Date();birth.setMonth(birth.getMonth()-1);
+  const b=birth.toISOString().slice(0,10);
+  const a1=uid(),a2=uid();
+  return {example:true,child:{name:'Миша',birth:b,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},
+    assets:[
+      {id:a1,name:'Квартира-студия',kind:'realty',cur:'USD',price:50000,value:50000,share:100,rent:400,cost:25,growth:3,rate:0},
+      {id:a2,name:'Вклад «Детский»',kind:'deposit',cur:'RUB',price:150000,value:150000,share:100,rent:0,cost:0,growth:0,rate:14}],
+    ops:[
+      {id:uid(),type:'in',date:b,amount:50000,cur:'RUB',src:'gift',from:'Бабушка Нина',note:'На рождение'},
+      {id:uid(),type:'in',date:b,amount:30000,cur:'RUB',src:'gov',from:'Единовременное пособие',note:''},
+      {id:uid(),type:'buy',date:today(),assetId:a1,amount:50000,cur:'USD',note:'Покупка квартиры для сдачи в аренду',parts:[
+        {src:'matcap',from:'',amount:8000},{src:'gift',from:'Бабушки и дедушки',amount:2500},{src:'gov',from:'Пособия',amount:1500},{src:'parentGift',from:'Папа',amount:38000}]},
+      {id:uid(),type:'buy',date:today(),assetId:a2,amount:150000,cur:'RUB',note:'',parts:[{src:'savings',from:'',amount:60000},{src:'gift',from:'Крёстный',amount:90000}]}],
+    goals:[{id:uid(),name:'Образование',amount:3000000,cur:'RUB',age:17},{id:uid(),name:'Первая машина',amount:1500000,cur:'RUB',age:18}],
+    fc:{rule:'debt',fundRate:8,topup:0}};
+}
+function blank(name,birth){return {example:false,child:{name,birth,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},assets:[],ops:[],goals:[],fc:{rule:'debt',fundRate:8,topup:0}}}
+let S=null,tab='home';
+function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return null}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+S=load()||example();
+if(S.goals===undefined)S.goals=[];
+if(tab==='fc'||tab==='goals')tab='plan';
+
+/* helpers */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const toBase=(a,c)=>(+a||0)*(S.rates[c]||1)/(S.rates[S.child.base]||1);
+function money(v,c,compact){
+  c=c||S.child.base;const abs=Math.abs(v);let s;
+  if(compact&&abs>=1e6)s=(v/1e6).toLocaleString('ru-RU',{maximumFractionDigits:abs>=1e8?0:abs>=1e7?1:2})+' млн';
+  else if(compact&&abs>=1e4)s=Math.round(v/1e3).toLocaleString('ru-RU')+' тыс.';
+  else s=Math.round(v).toLocaleString('ru-RU');
+  return s+' '+(SYM[c]||c);
+}
+function plural(n,f){n=Math.abs(n)%100;const n1=n%10;if(n>10&&n<20)return f[2];if(n1>1&&n1<5)return f[1];if(n1==1)return f[0];return f[2]}
+const yrs=n=>n+' '+plural(n,['год','года','лет']);
+function ageYears(at){const b=new Date(S.child.birth);const d=at?new Date(at):new Date();return Math.max(0,(d-b)/(365.25*864e5))}
+function ageText(){const b=new Date(S.child.birth),n=new Date();let m=(n.getFullYear()-b.getFullYear())*12+n.getMonth()-b.getMonth();if(n.getDate()<b.getDate())m--;m=Math.max(0,m);
+  const y=Math.floor(m/12),mm=m%12;const p=[];if(y)p.push(yrs(y));if(mm||!y)p.push(mm+' мес.');return p.join(' ')}
+const asset=id=>S.assets.find(a=>a.id===id);
+const MONTHS=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+const dShort=d=>new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short'}).replace('.','');
+
+/* maths (unchanged logic) */
+function compute(){
+  let cash=0;const loans={},src={};const add=(k,v)=>src[k]=(src[k]||0)+v;
+  for(const o of S.ops){const v=toBase(o.amount,o.cur);
+    if(o.type==='in'){cash+=v;add(o.src,v);if(o.src==='loan'){const k=o.from||'Родители';loans[k]=(loans[k]||0)+v}}
+    if(o.type==='income'){cash+=v;add('income',v)}
+    if(o.type==='expense')cash-=v;
+    if(o.type==='repay'){cash-=v;const k=o.from||'Родители';loans[k]=(loans[k]||0)-v}
+    if(o.type==='buy')for(const p of o.parts||[]){const pv=toBase(p.amount,o.cur);
+      if(p.src==='savings')cash-=pv;else{add(p.src,pv);if(p.src==='loan'){const k=p.from||'Родители';loans[k]=(loans[k]||0)+pv}}}}
+  let assets=0,rentM=0;
+  for(const a of S.assets){assets+=toBase(a.value,a.cur)*a.share/100;if(a.kind==='realty')rentM+=toBase(a.rent,a.cur)*(1-a.cost/100)*a.share/100}
+  const debt=Object.values(loans).reduce((s,v)=>s+Math.max(0,v),0);
+  return {cash,loans,src,assets,debt,rentM,net:cash+assets-debt};
+}
+function forecast(rule){
+  rule=rule||S.fc.rule;const c=compute();const start=ageYears();const left=Math.max(0,18-start);
+  const realty=S.assets.filter(a=>a.kind==='realty').map(a=>({v:toBase(a.value,a.cur)*a.share/100,rent:toBase(a.rent,a.cur)*12*(1-a.cost/100)*a.share/100,g:a.growth/100}));
+  const growing=S.assets.filter(a=>a.kind!=='realty').map(a=>({v:toBase(a.value,a.cur)*a.share/100,r:(a.kind==='other'?a.growth:a.rate)/100}));
+  let fund=Math.max(0,c.cash),debt=c.debt;const fr=S.fc.fundRate/100,top=toBase(S.fc.topup,S.child.base)*12;
+  const pts=[];const snap=age=>{const rv=realty.reduce((s,x)=>s+x.v,0),gv=growing.reduce((s,x)=>s+x.v,0);pts.push({age,net:rv+gv+fund-debt,liquid:gv+fund,realty:rv,fund,debt})};
+  snap(start);const steps=Math.ceil(left);
+  for(let i=1;i<=steps;i++){const frac=Math.min(1,left-(i-1));
+    const rent=realty.reduce((s,x)=>s+x.rent,0)*frac;let toFund=rent;
+    if(debt>0&&rule!=='fund'){const sh=rule==='split'?.5:1;const pay=Math.min(debt,rent*sh);debt-=pay;toFund=rent-pay}
+    fund=fund*Math.pow(1+fr,frac)+toFund+top*frac;
+    realty.forEach(x=>{x.v*=Math.pow(1+x.g,frac);x.rent*=Math.pow(1+x.g,frac)});
+    growing.forEach(x=>x.v*=Math.pow(1+x.r,frac));
+    snap(Math.min(18,start+i));}
+  return pts;
+}
+function valueAt(pts,age,key){let p=pts[0];for(const x of pts)if(x.age<=age+1e-6)p=x;return p[key]}
+
+/* chrome */
+const TABS=[['home','Главная','home'],['ops','Операции','list'],['add','','plus'],['assets','Активы','box'],['plan','План','chart']];
+function renderChrome(){
+  const has=!!S.child.name;
+  document.getElementById('tabbar').hidden=!has;
+  document.getElementById('hdr').innerHTML=has?`<div class="ava" aria-hidden="true">${esc(S.child.name.trim()[0]||'?').toUpperCase()}</div>
+    <div class="who"><b>${esc(S.child.name)}</b><span>${ageText()} · ${stageNow()[2].toLowerCase()}</span></div>
+    <button class="ibtn" data-action="settings" aria-label="Профиль и настройки">${I('gear')}</button>`
+    :`<div class="who"><b style="font-size:20px;font-weight:800;letter-spacing:-.02em">KidFund</b></div>`;
+  document.getElementById('tabs').innerHTML=TABS.map(([k,l,i])=>k==='add'
+    ?`<button class="plus" data-action="addop" aria-label="Новая запись">${I('plus')}</button>`
+    :`<button data-tab="${k}" ${tab===k?'aria-current="page"':''}>${I(i)}${l}</button>`).join('');
+}
+function render(){
+  renderChrome();
+  const v=document.getElementById('view');
+  v.classList.remove('view');void v.offsetWidth;v.classList.add('view');
+  if(!S.child.name){v.innerHTML=welcome();return}
+  const demo=S.example?`<div class="demo"><span><b>Это пример.</b> Квартира за 50 000 $ и вклад — посмотрите, как всё работает.</span><button class="btn sm" data-action="start">Начать своё</button></div>`:'';
+  v.innerHTML=demo+({home,ops:opsView,assets:assetsView,plan:planView}[tab])();
+  if(tab==='plan')bindChart();
+}
+function stageNow(){const a=ageYears();return STAGES.find(s=>a>=s[0]&&a<s[1])||STAGES[STAGES.length-1]}
+
+/* welcome */
+function welcome(){
+  return `<div class="welcome">
+  <div class="art"><div class="lg1">KidFund</div>
+  <svg viewBox="0 0 320 120" aria-hidden="true"><path d="M8 108 C70 104 110 92 150 74 S240 30 312 12" fill="none" stroke="currentColor" stroke-opacity=".9" stroke-width="3" stroke-linecap="round"/>
+  <path d="M8 108 C70 104 110 92 150 74 S240 30 312 12 V118 H8Z" fill="currentColor" fill-opacity=".1"/>
+  ${[[8,108,'0'],[110,92,'7'],[200,52,'14'],[312,12,'18']].map(([x,y,t])=>`<circle cx="${x}" cy="${y}" r="5" fill="currentColor"/><text x="${Math.min(300,Math.max(10,x))}" y="${y-12}" font-size="12" font-weight="700" fill="currentColor" text-anchor="${x>300?'end':x<20?'start':'middle'}" font-family="Onest,sans-serif">${t}</text>`).join('')}</svg></div>
+  <h1>Капитал ребёнка с первого дня</h1>
+  <p>Записывайте подарки, пособия, материнский капитал и покупки на имя ребёнка. KidFund покажет, сколько у него будет к 18 годам.</p>
+  <form id="welcomeForm" class="card">
+    <div class="f"><label for="w_name">Имя ребёнка</label><input id="w_name" required placeholder="Например, Миша" autocomplete="off"></div>
+    <div class="f"><label for="w_birth">Дата рождения</label><input id="w_birth" type="date" required value="${today()}"></div>
+    <button class="btn wide">Создать профиль</button>
+  </form>
+  <button class="alt" data-action="loadExample">Сначала посмотреть пример</button>
+  <p class="fine" style="text-align:center">Данные хранятся только на этом устройстве.</p></div>`;
+}
+
+/* home */
+function spark(pts){
+  const W=300,H=64;const max=Math.max(...pts.map(p=>p.net),1),min=Math.min(0,...pts.map(p=>p.net));
+  const x0=pts[0].age;const X=a=>(a-x0)/((18-x0)||1)*(W-8)+4,Y=v=>H-6-(v-min)/(max-min||1)*(H-14);
+  const d=pts.map((p,i)=>(i?'L':'M')+X(p.age).toFixed(1)+' '+Y(p.net).toFixed(1)).join(' ');const e=pts[pts.length-1];
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d} L${X(e.age)} ${H} L${X(x0)} ${H}Z" fill="currentColor" fill-opacity=".12"/><path d="${d}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg>`;
+}
+function home(){
+  const c=compute(),pts=forecast(),e=pts[pts.length-1],st=stageNow(),a=ageYears();
+  const segs=STAGES.map(s=>{const w=(Math.min(18,s[1])-s[0]);const cls=a>=s[1]?'past':a>=s[0]?'cur':'';const p=cls==='cur'?((a-s[0])/w*100).toFixed(1)+'%':'0%';return `<div class="seg ${cls}" style="flex:${w};--p:${p}"></div>`}).join('');
+  const nextGoal=[...S.goals].sort((x,y)=>x.age-y.age).find(g=>g.age>a);
+  const srcRows=Object.entries(c.src).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]);const tot=srcRows.reduce((s,x)=>s+x[1],0)||1;
+  const col=k=>k==='income'?'var(--c-income)':`var(${SRC[k].c})`;const lab=k=>k==='income'?'Доход от активов':SRC[k].l;
+  const recent=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,4);
+  return `<section class="hero">
+    <div class="k">Капитал ребёнка</div>
+    <div class="v money">${money(c.net)}</div>
+    ${spark(pts)}
+    <div class="row"><span class="pill">К 18 годам ≈ <span class="money">${money(e.net,null,true)}</span></span><span class="muted">+${money(c.rentM,null,true)} в месяц</span></div>
+  </section>
+  <div class="qa">
+    ${[['in','Поступление'],['buy','Покупка'],['income','Доход'],['expense','Расход']].map(([k,l])=>`<button data-newop="${k}"><span class="ic ${TYPES[k][2]}">${I(TYPES[k][1])}</span>${l}</button>`).join('')}
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="k">Активы</div><div class="v money">${money(c.assets,null,true)}</div></div>
+    <div class="stat"><div class="k">Свободно</div><div class="v money">${money(c.cash,null,true)}</div></div>
+    <div class="stat ${c.debt>0?'warn':''}"><div class="k">Долг родителям</div><div class="v money">${c.debt>0?money(c.debt,null,true):'нет'}</div></div>
+  </div>
+  <div class="sec"><h2>Путь до 18 лет</h2><span class="cap">${Math.max(0,18-a).toLocaleString('ru-RU',{maximumFractionDigits:1})} ${plural(Math.ceil(18-a),['год','года','лет'])} впереди</span></div>
+  <div class="card journey">
+    <div class="head"><div><div class="cap">Сейчас</div><div class="stg">${st[2]}</div></div>${nextGoal?`<span class="badge amber">Цель к ${nextGoal.age}: ${esc(nextGoal.name)}</span>`:''}</div>
+    <div class="bar" role="img" aria-label="Пройдено ${Math.round(a/18*100)}% пути до 18 лет">${segs}</div>
+    <div class="marks">${[0,3,7,12,14,16,18].map(t=>`<span style="left:${t/18*100}%">${t}</span>`).join('')}</div>
+    <p>${st[3]}</p>
+  </div>
+  <div class="sec"><h2>Откуда капитал</h2><span class="cap money">${money(tot,null,true)}</span></div>
+  <div class="card">${srcRows.length?`<div class="stack">${srcRows.map(([k,v])=>`<i style="flex:${v};background:${col(k)}"></i>`).join('')}</div>
+    <div class="legend">${srcRows.map(([k,v])=>`<div class="lg"><span class="dot" style="background:${col(k)}"></span><span class="n">${lab(k)}</span><span class="p">${Math.round(v/tot*100)}%</span><span class="m money">${money(v,null,true)}</span></div>`).join('')}</div>`
+    :`<div class="empty"><b>Пока пусто</b>Добавьте первое поступление — подарок или пособие.</div>`}</div>
+  <div class="sec"><h2>Последние записи</h2>${S.ops.length>4?`<button class="link" data-tab="ops">Все</button>`:''}</div>
+  ${recent.length?`<div class="list">${recent.map(opItem).join('')}</div>`:`<div class="card empty"><b>Записей нет</b>Нажмите «+» внизу.</div>`}`;
+}
+
+/* ledger */
+function opMeta(o){
+  const a=o.assetId?asset(o.assetId):null;
+  if(o.type==='in'){const s=SRC[o.src];return {i:s.i,t:s.t,title:s.l,sub:o.from||o.note,sign:'+',cls:'pos'}}
+  if(o.type==='income')return {i:'up',t:'t-inc',title:'Доход: '+(o.kind||'аренда'),sub:a?a.name:'',sign:'+',cls:'pos'};
+  if(o.type==='expense')return {i:'out',t:'t-exp',title:o.cat?o.cat[0].toUpperCase()+o.cat.slice(1):'Расход',sub:o.note||'Расход на ребёнка',sign:'−',cls:''};
+  if(o.type==='repay')return {i:'back',t:'t-loan',title:'Возврат займа',sub:o.from,sign:'−',cls:'negc'};
+  return {i:a?KIND_I[a.kind]:'home',t:'t-buy',title:a?a.name:'Покупка',sub:'Покупка · '+(o.parts||[]).length+' '+plural((o.parts||[]).length,['источник','источника','источников']),sign:'',cls:''};
+}
+function opItem(o){
+  const m=opMeta(o);const alt=o.cur!==S.child.base?`<small class="money">${money(toBase(o.amount,o.cur),null,true)}</small>`:`<small>${dShort(o.date)}</small>`;
+  return `<button class="item" data-op="${o.id}"><span class="ic ${m.t}">${I(m.i)}</span><span class="tx"><b>${esc(m.title)}</b><span>${esc(m.sub||'')}</span></span><span class="am"><span class="money ${m.cls}">${m.sign}${money(o.amount,o.cur)}</span>${alt}</span></button>`;
+}
+function opsView(){
+  const list=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date));
+  if(!list.length)return `<h1 class="ptitle">Операции</h1><div class="card empty"><b>Записей пока нет</b>Нажмите «+», чтобы записать подарок, пособие или покупку.</div>`;
+  const groups={};list.forEach(o=>{const k=o.date.slice(0,7);(groups[k]=groups[k]||[]).push(o)});
+  return `<h1 class="ptitle">Операции</h1>`+Object.entries(groups).map(([k,ops])=>{
+    const [y,m]=k.split('-');const inflow=ops.reduce((s,o)=>{if(o.type==='in'||o.type==='income')return s+toBase(o.amount,o.cur);if(o.type==='buy')return s+(o.parts||[]).filter(p=>p.src!=='savings').reduce((q,p)=>q+toBase(p.amount,o.cur),0);return s},0);
+    const nm=MONTHS[+m-1];return `<div class="month"><span>${nm[0].toUpperCase()+nm.slice(1)} ${y}</span><span class="money">+${money(inflow,null,true)}</span></div><div class="list">${ops.map(opItem).join('')}</div>`}).join('')
+    +`<p class="fine">Суммы в других валютах пересчитаны по курсу ЦБ РФ из настроек.</p>`;
+}
+
+/* assets */
+function assetCard(a){
+  const vb=toBase(a.value,a.cur)*a.share/100;const ch=a.price?(a.value-a.price)/a.price*100:0;
+  const facts=[['Доля',a.share+'%'],['Куплено',money(a.price,a.cur,true)]];
+  if(a.kind==='realty')facts.push(['Аренда',money(a.rent,a.cur)+'/мес'],['Расходы',a.cost+'%'],['Рост',a.growth+'% в год']);
+  else if(a.kind==='other')facts.push(['Рост',a.growth+'% в год']);else facts.push(['Доходность',a.rate+'% в год']);
+  const buy=S.ops.find(o=>o.type==='buy'&&o.assetId===a.id);
+  const fund=buy?`<div class="fund"><div class="cap">Источники денег</div><div class="stack">${buy.parts.map(p=>`<i style="flex:${p.amount};background:var(${SRC[p.src].c})"></i>`).join('')}</div>
+    <div class="legend">${buy.parts.map(p=>`<div class="lg"><span class="dot" style="background:var(${SRC[p.src].c})"></span><span class="n">${esc(SRC[p.src].l)}${p.from?` · ${esc(p.from)}`:''}</span><span class="m money">${money(p.amount,buy.cur,true)}</span></div>`).join('')}</div></div>`:'';
+  return `<button class="card acard" data-asset="${a.id}"><div class="top"><span class="ic t-buy">${I(KIND_I[a.kind])}</span><span class="nm"><b>${esc(a.name)}</b><span>${KIND[a.kind]}</span></span>
+    <span class="val"><b class="money">${money(a.value,a.cur)}</b><span class="${ch>=0?'pos':'negc'}">${a.cur!==S.child.base?money(vb,null,true):(ch>=0?'+':'')+ch.toFixed(1)+'%'}</span></span></div>
+    <div class="facts">${facts.map(f=>`<div class="fact"><span>${f[0]}</span><b class="money">${f[1]}</b></div>`).join('')}</div>${fund}</button>`;
+}
+function assetsView(){
+  const c=compute();
+  return `<h1 class="ptitle">Активы</h1>
+  ${S.assets.length?`<div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="cap">Всего в активах</div><div style="font-size:24px;font-weight:800;letter-spacing:-.02em" class="money">${money(c.assets)}</div></div><span class="badge">${S.assets.length} ${plural(S.assets.length,['актив','актива','активов'])}</span></div>`:''}
+  <div class="cards">${S.assets.length?S.assets.map(assetCard).join(''):`<div class="card empty"><b>Активов пока нет</b>Квартира, вклад, акции — всё, что куплено на имя ребёнка.</div>`}</div>
+  <button class="addrow" data-newop="buy">${I('plus')}Купить актив</button>
+  <p class="fine">Нажмите на актив, чтобы обновить оценку, аренду или ставку.</p>`;
+}
+
+/* plan */
+let CH=null;
+function niceStep(r){const p=Math.pow(10,Math.floor(Math.log10(r||1)));const n=r/p;return (n<=1?1:n<=2?2:n<=5?5:10)*p}
+function short(v){if(v>=1e6)return (v/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1})+' млн';if(v>=1e3)return Math.round(v/1e3)+' т';return Math.round(v)}
+function chartSVG(pts){
+  const W=340,H=220,L=48,R=12,T=14,B=26;const x0=pts[0].age;
+  const max=Math.max(...pts.map(p=>Math.max(p.net,p.debt,p.liquid)),1);const step=niceStep(max/4);const top=Math.ceil(max/step)*step;
+  const X=a=>L+(a-x0)/((18-x0)||1)*(W-L-R),Y=v=>T+(1-Math.max(0,v)/top)*(H-T-B);
+  const line=k=>pts.map((p,i)=>(i?'L':'M')+X(p.age).toFixed(1)+' '+Y(p[k]).toFixed(1)).join(' ');
+  let g='';for(let v=0;v<=top+1e-6;v+=step)g+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1" ${v?'stroke-dasharray="2 4"':''}/><text x="${L-8}" y="${Y(v)+4}" text-anchor="end" font-size="10.5" fill="var(--muted)">${short(v)}</text>`;
+  let xt='';const ages=[];for(let a=Math.ceil(x0);a<=18;a++)if(a%3===0||a===18)ages.push(a);ages.forEach(a=>xt+=`<text x="${X(a)}" y="${H-7}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${a}</text>`);
+  const e=pts[pts.length-1];
+  CH={pts,X,Y,W,H,T,B,L,R,x0};
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Прогноз капитала до 18 лет: ${money(e.net)} в 18">
+  <defs><linearGradient id="ga" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".22"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+  ${g}${xt}<text x="${W-R}" y="${H-7}" text-anchor="end" font-size="10.5" fill="var(--muted)" dx="0" dy="0"></text>
+  <path d="${line('net')} L${X(e.age)} ${Y(0)} L${X(x0)} ${Y(0)}Z" fill="url(#ga)"/>
+  <path d="${line('debt')}" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="5 4" stroke-linecap="round"/>
+  <path d="${line('liquid')}" fill="none" stroke="var(--amber)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="${line('net')}" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="${X(e.age)}" cy="${Y(e.net)}" r="5" fill="var(--surface)" stroke="var(--accent)" stroke-width="3"/>
+  <g id="cur" opacity="0"><line id="cl" y1="${T}" y2="${H-B}" stroke="var(--ink)" stroke-opacity=".3" stroke-width="1"/><circle id="cd" r="5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2"/></g></svg>`;
+}
+function bindChart(){
+  const w=document.getElementById('chartwrap');if(!w||!CH)return;const tip=document.getElementById('tip');const svg=w.querySelector('svg');
+  const show=p=>{const x=CH.X(p.age),y=CH.Y(p.net);const g=svg.querySelector('#cur');g.setAttribute('opacity','1');
+    svg.querySelector('#cl').setAttribute('x1',x);svg.querySelector('#cl').setAttribute('x2',x);svg.querySelector('#cd').setAttribute('cx',x);svg.querySelector('#cd').setAttribute('cy',y);
+    tip.hidden=false;tip.innerHTML=`${Math.round(p.age)===0?'Сейчас':yrs(Math.round(p.age))}<br><b class="money">${money(p.net,null,true)}</b><br><span style="opacity:.7">ликвидно ${money(p.liquid,null,true)}${p.debt>1?' · долг '+money(p.debt,null,true):''}</span>`;
+    const pct=x/CH.W*100;tip.style.left=Math.min(78,Math.max(22,pct))+'%'};
+  const move=ev=>{const r=svg.getBoundingClientRect();const x=(ev.clientX-r.left)/r.width*CH.W;let best=CH.pts[0],bd=1e9;CH.pts.forEach(p=>{const d=Math.abs(CH.X(p.age)-x);if(d<bd){bd=d;best=p}});show(best)};
+  w.addEventListener('pointermove',move);w.addEventListener('pointerdown',move);
+  w.addEventListener('pointerleave',()=>{tip.hidden=true;svg.querySelector('#cur').setAttribute('opacity','0')});
+}
+function goalRing(p,ok){const r=24,c=2*Math.PI*r;return `<div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="6"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="${ok?'var(--accent)':'var(--amber)'}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(c*p/100).toFixed(1)} ${c.toFixed(1)}"/></svg><b>${Math.round(p)}%</b></div>`}
+function planView(){
+  const pts=forecast(),e=pts[pts.length-1];const other={debt:'fund',fund:'debt',split:'debt'}[S.fc.rule];const ae=forecast(other).slice(-1)[0];
+  const RULES={debt:'Сначала долг',split:'50 / 50',fund:'Всё в фонд'};const RL={debt:'сначала гасить долг',split:'50/50 долг и фонд',fund:'всё в фонд'};
+  const c=compute();const debtFree=pts.find(p=>p.debt<=1);
+  let used=0;const goals=[...S.goals].sort((a,b)=>a.age-b.age).map(g=>{const need=toBase(g.amount,g.cur);const have=Math.max(0,valueAt(pts,g.age,'liquid')-used);used+=need;const pct=Math.min(100,have/need*100);const ok=have>=need;
+    return `<div class="card goal">${goalRing(pct,ok)}<div class="gx"><b>${esc(g.name)}</b><span class="money">${money(g.amount,g.cur)} · к ${g.age} ${plural(g.age,['году','годам','годам'])}</span></div>
+    <div class="gs">${ok?'<span class="badge">Успеваем</span>':`<span class="badge red">−${money(need-have,null,true)}</span>`}<button class="xbtn" data-delgoal="${g.id}">Удалить</button></div></div>`}).join('');
+  return `<h1 class="ptitle">План до 18 лет</h1>
+  <div class="card">
+    <div class="cap" style="margin-bottom:8px">Куда направлять аренду и свободные деньги</div>
+    <div class="segc" role="radiogroup" aria-label="Правило реинвестирования">${Object.entries(RULES).map(([k,l])=>`<label><input type="radio" name="rule" value="${k}" ${S.fc.rule===k?'checked':''}><span>${l}</span></label>`).join('')}</div>
+    <div class="knobs"><div class="f" style="margin:0"><label for="fc_rate">Доходность фонда, % в год</label><input id="fc_rate" type="number" inputmode="decimal" step="0.5" value="${S.fc.fundRate}"></div>
+    <div class="f" style="margin:0"><label for="fc_top">Родители добавляют, ${SYM[S.child.base]} в мес.</label><input id="fc_top" type="number" inputmode="numeric" step="500" value="${S.fc.topup}"></div></div>
+    <div class="chartwrap" id="chartwrap">${chartSVG(pts)}<div class="tip" id="tip" hidden></div></div>
+    <div class="keys"><span><i style="background:var(--accent)"></i>Капитал</span><span><i style="background:var(--amber)"></i>Ликвидные деньги</span>${c.debt>0?'<span><i style="background:var(--red)"></i>Долг родителям</span>':''}<span>Возраст, лет</span></div>
+    <div class="big3"><div class="stat"><div class="k">В 18 лет</div><div class="v money">${money(e.net,null,true)}</div></div>
+    <div class="stat"><div class="k">Ликвидно</div><div class="v money">${money(e.liquid,null,true)}</div></div>
+    <div class="stat"><div class="k">Недвижимость</div><div class="v money">${money(e.realty,null,true)}</div></div></div>
+    <div class="callout">${I('info')}<span>${c.debt>0?(debtFree?`Долг родителям закрывается примерно к ${yrs(Math.floor(debtFree.age))}. `:'При этом правиле долг к 18 годам не закрыт. '):''}Вариант «${RL[other]}» даёт <b class="money">${money(ae.net,null,true)}</b> к 18 годам.</span></div>
+  </div>
+  <p class="fine">Проведите пальцем по графику, чтобы увидеть сумму в любом возрасте. Расчёт по вашим допущениям, не гарантия доходности.</p>
+  <div class="sec"><h2>Цели</h2><span class="cap">из ликвидных денег</span></div>
+  <div class="cards">${goals||`<div class="card empty"><b>Целей пока нет</b>Образование, первая машина, старт в 18.</div>`}</div>
+  <button class="addrow" data-action="addgoal">${I('plus')}Добавить цель</button>
+  <p class="fine">Цели закрываются по очереди, от ближней к дальней, из вкладов, фондов и свободных денег. Квартира в расчёт не входит.</p>`;
+}
+
+/* sheets */
+const scrim=document.getElementById('scrim'),sheet=document.getElementById('sheet');
+function openSheet(title,body,foot){
+  sheet.innerHTML=`<div class="grab"></div><div class="shh"><h3 id="shTitle">${title}</h3><button class="ibtn" data-action="close" aria-label="Закрыть">${I('x')}</button></div><div class="shb" id="shb">${body}</div>${foot?`<div class="shf">${foot}</div>`:''}`;
+  scrim.hidden=false;document.body.style.overflow='hidden';
+  const f=sheet.querySelector('.shb input:not([type=radio]),.shb select');setTimeout(()=>f&&f.focus({preventScroll:true}),60);
+}
+function closeSheet(){scrim.hidden=true;sheet.innerHTML='';document.body.style.overflow=''}
+scrim.addEventListener('click',e=>{if(e.target===scrim)closeSheet()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!scrim.hidden)closeSheet()});
+function toast(t){const el=document.getElementById('toast');el.innerHTML=I('check')+esc(t);el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>el.hidden=true,2200)}
+const curSel=(id,v,lbl)=>`<select id="${id}" aria-label="${lbl||'Валюта'}">${CURS.map(c=>`<option value="${c}" ${c===v?'selected':''}>${SYM[c]} ${c}</option>`).join('')}</select>`;
+const srcOpts=(v,sav)=>Object.entries(SRC).filter(([k])=>sav||k!=='savings').map(([k,s])=>`<option value="${k}" ${k===v?'selected':''}>${s.l}</option>`).join('');
+function err(t){const b=document.getElementById('shb');b.querySelector('.err')?.remove();b.insertAdjacentHTML('afterbegin',`<div class="err" role="alert">${esc(t)}</div>`);b.scrollTop=0}
+
+function opBody(type){
+  const lenders=Object.entries(compute().loans).filter(x=>x[1]>0.5).map(x=>x[0]);
+  return `<div class="types" role="radiogroup" aria-label="Тип записи">${Object.entries(TYPES).map(([k,[l,i]])=>`<label><input type="radio" name="otype" value="${k}" ${k===type?'checked':''}><span>${I(i)}${l}</span></label>`).join('')}</div>
+  <div class="amt"><input id="o_amount" type="number" inputmode="decimal" min="0" step="any" placeholder="0" aria-label="${type==='buy'?'Цена покупки':'Сумма'}">${curSel('o_cur',type==='buy'?'USD':S.child.base)}</div>
+  ${type==='in'?`<div class="f"><label for="o_src">Вид средств</label><select id="o_src">${srcOpts('gift')}</select></div>
+    <div class="f" id="fromWrap"><label for="o_from" id="fromLbl">${SRC.gift.from}</label><input id="o_from" placeholder="${SRC.gift.ph}"></div>
+    <p class="hint" id="srcHint"></p>`:''}
+  ${type==='income'?`<div class="g2"><div class="f"><label for="o_asset">Актив</label><select id="o_asset">${S.assets.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')||'<option value="">Нет активов</option>'}</select></div>
+    <div class="f"><label for="o_kind">Вид дохода</label><select id="o_kind"><option>аренда</option><option>проценты</option><option>дивиденды</option><option>купон</option><option>другое</option></select></div></div>`:''}
+  ${type==='expense'?`<div class="f"><label for="o_cat">На что</label><select id="o_cat"><option>кружки и секции</option><option>образование</option><option>медицина</option><option>одежда и вещи</option><option>ремонт актива</option><option>налоги</option><option>другое</option></select></div>`:''}
+  ${type==='repay'?`<div class="f"><label for="o_lender">Кому возвращаем</label>${lenders.length?`<select id="o_lender">${lenders.map(l=>`<option>${esc(l)}</option>`).join('')}</select>`:'<input id="o_lender" placeholder="Папа">'}</div>
+    ${lenders.length?'':'<p class="hint">Сейчас у ребёнка нет займов в учёте.</p>'}`:''}
+  ${type==='buy'?`<div class="f"><label for="b_name">Что купили</label><input id="b_name" placeholder="Квартира на Ленина, 12"></div>
+    <div class="g2"><div class="f"><label for="b_kind">Тип актива</label><select id="b_kind">${Object.entries(KIND).map(([k,l])=>`<option value="${k}">${l}</option>`).join('')}</select></div>
+    <div class="f"><label for="b_share">Доля ребёнка, %</label><input id="b_share" type="number" inputmode="numeric" value="100" min="1" max="100"></div></div>
+    <div class="g3"><div class="f b-realty"><label for="b_rent">Аренда в мес.</label><input id="b_rent" type="number" inputmode="decimal" value="0" min="0"></div>
+    <div class="f b-realty"><label for="b_cost">Расходы, %</label><input id="b_cost" type="number" inputmode="decimal" value="25" min="0" max="100"></div>
+    <div class="f b-grow"><label for="b_growth">Рост в год, %</label><input id="b_growth" type="number" inputmode="decimal" value="3" step="0.5"></div>
+    <div class="f b-rate" hidden><label for="b_rate">Доходность, %</label><input id="b_rate" type="number" inputmode="decimal" value="10" step="0.5"></div></div>
+    <div class="grp">Откуда деньги</div>
+    <div class="parts" id="parts"></div>
+    <div class="meter" id="meter"></div>
+    <button type="button" class="addrow" data-action="addpart" style="margin-top:8px">${I('plus')}Добавить источник</button>`:''}
+  <div class="g2" style="margin-top:12px"><div class="f"><label for="o_date">Дата</label><input id="o_date" type="date" value="${today()}"></div>
+  <div class="f"><label for="o_note">Комментарий</label><input id="o_note" placeholder="Необязательно"></div></div>`;
+}
+function partRow(src,from,amount){
+  return `<div class="part"><select data-k="src" aria-label="Вид средств">${srcOpts(src||'gift',true)}</select><button type="button" class="rm" data-action="delpart" aria-label="Убрать источник">${I('trash')}</button>
+  <div class="r2"><input data-k="from" placeholder="От кого" value="${esc(from||'')}" aria-label="От кого"><input data-k="amount" type="number" inputmode="decimal" min="0" step="any" placeholder="Сумма" value="${amount??''}" aria-label="Сумма"></div></div>`;
+}
+function openOp(type){
+  type=type||'in';
+  openSheet('Новая запись',opBody(type),`<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-action="saveop" data-type="${type}">Сохранить</button>`);
+  if(type==='buy'){document.getElementById('parts').innerHTML=partRow('gift')+partRow('parentGift');syncBuy()}
+  if(type==='in')syncSrc();
+}
+function syncSrc(){const s=document.getElementById('o_src');if(!s)return;const d=SRC[s.value];
+  document.getElementById('fromWrap').hidden=!d.from;if(d.from){document.getElementById('fromLbl').textContent=d.from;document.getElementById('o_from').placeholder=d.ph||''}
+  document.getElementById('srcHint').textContent=s.value==='loan'?'Заём попадёт в долг ребёнка и будет гаситься из его доходов.':s.value==='matcap'?'Обычно направляется на жильё — тогда указывайте его в покупке.':'';
+}
+function syncBuy(){
+  const k=document.getElementById('b_kind');if(!k)return;const kind=k.value;
+  sheet.querySelectorAll('.b-realty').forEach(e=>e.hidden=kind!=='realty');
+  sheet.querySelectorAll('.b-grow').forEach(e=>e.hidden=!(kind==='realty'||kind==='other'));
+  sheet.querySelectorAll('.b-rate').forEach(e=>e.hidden=!(kind==='deposit'||kind==='fund'));
+  const price=+document.getElementById('o_amount').value||0,cur=document.getElementById('o_cur').value;
+  const sum=[...sheet.querySelectorAll('.part [data-k="amount"]')].reduce((s,i)=>s+(+i.value||0),0);const diff=price-sum;
+  const pct=price?Math.min(100,sum/price*100):0;const cls=!price?'':Math.abs(diff)<0.005?'full':diff<0?'over':'';
+  document.getElementById('meter').innerHTML=`<div class="track"><i class="${cls}" style="width:${pct}%"></i></div><div class="txt"><span class="money">${money(sum,cur)} из ${money(price,cur)}</span><span>${!price?'Укажите цену вверху':Math.abs(diff)<0.005?'<b class="pos">Сходится</b>':diff>0?'Осталось '+money(diff,cur):'<b class="negc">Лишние '+money(-diff,cur)+'</b>'}</span></div>`;
+}
+function saveOp(type){
+  const g=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
+  const amount=+g('o_amount');const o={id:uid(),type,date:g('o_date')||today(),amount,cur:g('o_cur'),note:g('o_note')};
+  if(!(amount>0))return err('Введите сумму больше нуля.');
+  if(type==='in'){o.src=g('o_src');o.from=SRC[o.src].from?g('o_from'):'';if(o.src==='loan'&&!o.from)o.from='Родители'}
+  if(type==='income'){o.assetId=g('o_asset');o.kind=g('o_kind');if(!o.assetId)return err('Сначала добавьте актив, который приносит доход.')}
+  if(type==='expense'){o.cat=g('o_cat')}
+  if(type==='repay'){o.from=g('o_lender')||'Родители';const owed=compute().loans[o.from]||0;if(toBase(amount,o.cur)>owed+0.5)return err(owed>0.5?`Ребёнок должен ${o.from} только ${money(owed)}.`:'У ребёнка нет долга перед '+o.from+'.')}
+  if(type==='buy'){
+    const name=g('b_name');if(!name)return err('Напишите, что купили.');
+    const parts=[...sheet.querySelectorAll('.part')].map(r=>({src:r.querySelector('[data-k="src"]').value,from:r.querySelector('[data-k="from"]').value.trim(),amount:+r.querySelector('[data-k="amount"]').value||0})).filter(p=>p.amount>0);
+    const sum=parts.reduce((s,p)=>s+p.amount,0);
+    if(!parts.length)return err('Укажите, откуда деньги на покупку.');
+    if(Math.abs(sum-amount)>0.005)return err(`Источники дают ${money(sum,o.cur)}, а цена ${money(amount,o.cur)}. Суммы должны совпасть.`);
+    const sav=parts.filter(p=>p.src==='savings').reduce((s,p)=>s+toBase(p.amount,o.cur),0);
+    if(sav>compute().cash+0.5)return err(`Свободных денег у ребёнка ${money(compute().cash)} — меньше, чем указано из накоплений.`);
+    const a={id:uid(),name,kind:g('b_kind'),cur:o.cur,price:amount,value:amount,share:Math.min(100,Math.max(1,+g('b_share')||100)),rent:+g('b_rent')||0,cost:+g('b_cost')||0,growth:+g('b_growth')||0,rate:+g('b_rate')||0};
+    S.assets.push(a);o.assetId=a.id;o.parts=parts;
+  }
+  S.ops.push(o);save();closeSheet();render();toast('Запись сохранена');
+}
+function opDetail(id){
+  const o=S.ops.find(x=>x.id===id);if(!o)return;const m=opMeta(o);
+  const rows=[['Дата',new Date(o.date).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'})]];
+  if(o.cur!==S.child.base)rows.push(['В основной валюте',money(toBase(o.amount,o.cur))]);
+  if(o.type==='in'){rows.push(['Вид средств',SRC[o.src].l]);if(o.from)rows.push(['От кого',o.from])}
+  if(o.type==='income')rows.push(['Актив',asset(o.assetId)?.name||'—'],['Вид дохода',o.kind]);
+  if(o.type==='repay')rows.push(['Кому',o.from]);
+  if(o.note)rows.push(['Комментарий',o.note]);
+  const parts=o.type==='buy'?`<div class="grp">Откуда деньги</div><div class="rows">${o.parts.map(p=>`<div><span>${esc(SRC[p.src].l)}${p.from?' · '+esc(p.from):''}</span><b class="money">${money(p.amount,o.cur)}</b></div>`).join('')}</div>`:'';
+  openSheet(TYPES[o.type][0],`<div class="dhead"><span class="ic ${m.t}">${I(m.i)}</span><b class="money ${m.cls}">${m.sign}${money(o.amount,o.cur)}</b><span>${esc(m.title)}</span></div>
+    <div class="rows">${rows.map(r=>`<div><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>${parts}
+    ${o.type==='buy'?'<p class="fine">Удаление покупки удалит и сам актив.</p>':''}`,
+    `<button class="btn danger" data-delop="${o.id}" data-step="1">Удалить</button><button class="btn ghost" data-action="close">Готово</button>`);
+}
+function assetEdit(id){
+  const a=asset(id);if(!a)return;
+  openSheet(esc(a.name),`<div class="g2"><div class="f"><label for="e_value">Оценка сейчас, ${SYM[a.cur]}</label><input id="e_value" type="number" inputmode="decimal" value="${a.value}"></div>
+  <div class="f"><label for="e_share">Доля ребёнка, %</label><input id="e_share" type="number" inputmode="numeric" value="${a.share}"></div>
+  ${a.kind==='realty'?`<div class="f"><label for="e_rent">Аренда в мес., ${SYM[a.cur]}</label><input id="e_rent" type="number" inputmode="decimal" value="${a.rent}"></div><div class="f"><label for="e_cost">Расходы и налог, %</label><input id="e_cost" type="number" inputmode="decimal" value="${a.cost}"></div>`:''}
+  ${a.kind==='realty'||a.kind==='other'?`<div class="f"><label for="e_growth">Рост цены, % в год</label><input id="e_growth" type="number" inputmode="decimal" step="0.5" value="${a.growth}"></div>`:`<div class="f"><label for="e_rate">Доходность, % в год</label><input id="e_rate" type="number" inputmode="decimal" step="0.5" value="${a.rate}"></div>`}</div>
+  ${a.kind==='realty'?'<p class="hint">Расходы — налог с аренды, коммунальные платежи, простой и ремонт. Они уменьшают чистый доход в прогнозе.</p>':''}
+  <p class="hint">Оценку стоит обновлять раз в год — по объявлениям или отчёту оценщика.</p>`,
+  `<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-saveasset="${a.id}">Сохранить</button>`);
+}
+function goalForm(){
+  openSheet('Новая цель',`<div class="f"><label for="g_name">Цель</label><input id="g_name" placeholder="Образование, машина, старт бизнеса"></div>
+  <div class="amt"><input id="g_amount" type="number" inputmode="decimal" min="0" placeholder="0" aria-label="Сумма цели">${curSel('g_cur',S.child.base)}</div>
+  <div class="f"><label for="g_age">К какому возрасту</label><input id="g_age" type="number" inputmode="numeric" min="1" max="18" value="18"></div>`,
+  `<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-action="savegoal">Добавить</button>`);
+}
+function settings(){
+  openSheet('Профиль',`<div class="g2"><div class="f"><label for="s_name">Имя ребёнка</label><input id="s_name" value="${esc(S.child.name)}"></div>
+  <div class="f"><label for="s_birth">Дата рождения</label><input id="s_birth" type="date" value="${S.child.birth}"></div></div>
+  <div class="f"><label for="s_base">Основная валюта</label>${curSel('s_base',S.child.base,'Основная валюта')}</div>
+  <div class="grp">Курсы к рублю</div>
+  <div class="g2">${CURS.filter(c=>c!=='RUB').map(c=>`<div class="f"><label for="r_${c}">1 ${c}, ₽</label><input id="r_${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
+  <p class="hint">${S.ratesDate?`Курсы ЦБ РФ на ${new Date(S.ratesDate).toLocaleDateString('ru-RU')}, обновляются автоматически. Можно поправить вручную.`:'Курсы обновятся по ЦБ РФ автоматически, когда появится интернет. Можно задать вручную.'}</p>
+  <button class="btn wide" data-action="savesettings">Сохранить профиль</button>
+  <div class="grp">Резервная копия</div>
+  <p class="hint">Данные хранятся только на этом телефоне. Скопируйте текст в Заметки — так их можно перенести или восстановить.</p>
+  <div class="f"><label for="s_json">Данные KidFund</label><textarea id="s_json" spellcheck="false">${esc(JSON.stringify(S))}</textarea></div>
+  <div class="g2"><button class="btn ghost" data-action="copyjson">Скопировать</button><button class="btn ghost" data-action="importjson">Загрузить из поля</button></div>
+  <div class="grp">Сброс</div>
+  <div class="g2"><button class="btn ghost" data-action="loadExample">Открыть пример</button><button class="btn danger" data-action="wipe" data-step="1">Удалить данные</button></div>`);
+}
+
+/* events */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('button');if(!t)return;
+  if(t.dataset.tab){tab=t.dataset.tab;render();window.scrollTo({top:0});return}
+  if(t.dataset.newop)return openOp(t.dataset.newop);
+  if(t.dataset.op)return opDetail(t.dataset.op);
+  if(t.dataset.asset)return assetEdit(t.dataset.asset);
+  if(t.dataset.delgoal){S.goals=S.goals.filter(g=>g.id!==t.dataset.delgoal);save();render();return toast('Цель удалена')}
+  if(t.dataset.delop){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить?';return}
+    const o=S.ops.find(x=>x.id===t.dataset.delop);S.ops=S.ops.filter(x=>x.id!==o.id);if(o.type==='buy')S.assets=S.assets.filter(a=>a.id!==o.assetId);save();closeSheet();render();return toast('Запись удалена')}
+  if(t.dataset.saveasset){const a=asset(t.dataset.saveasset);const v=id=>{const el=document.getElementById(id);return el&&el.value!==''?+el.value:null};
+    a.value=v('e_value')??a.value;a.share=Math.min(100,Math.max(1,v('e_share')||a.share));
+    ['rent','cost','growth','rate'].forEach(k=>{const x=v('e_'+k);if(x!==null)a[k]=x});save();closeSheet();render();return toast('Актив обновлён')}
+  const act=t.dataset.action;if(!act)return;
+  if(act==='addop')openOp(tab==='assets'?'buy':'in');
+  if(act==='close')closeSheet();
+  if(act==='saveop')saveOp(t.dataset.type);
+  if(act==='addpart'){document.getElementById('parts').insertAdjacentHTML('beforeend',partRow('gift'));syncBuy()}
+  if(act==='delpart'){t.closest('.part').remove();syncBuy()}
+  if(act==='settings')settings();
+  if(act==='addgoal')goalForm();
+  if(act==='savegoal'){const n=document.getElementById('g_name').value.trim(),a=+document.getElementById('g_amount').value,age=+document.getElementById('g_age').value;
+    if(!n||!(a>0))return err('Введите название и сумму цели.');if(!(age>=1&&age<=18))return err('Возраст цели — от 1 до 18 лет.');
+    S.goals.push({id:uid(),name:n,amount:a,cur:document.getElementById('g_cur').value,age});save();closeSheet();render();toast('Цель добавлена')}
+  if(act==='start'){S=blank('','');save();tab='home';render();setTimeout(()=>document.getElementById('w_name')?.focus(),60)}
+  if(act==='loadExample'){S=example();save();tab='home';closeSheet();render();toast('Открыт пример')}
+  if(act==='savesettings'){S.child.name=document.getElementById('s_name').value.trim()||S.child.name;S.child.birth=document.getElementById('s_birth').value||S.child.birth;S.child.base=document.getElementById('s_base').value;
+    CURS.filter(c=>c!=='RUB').forEach(c=>{const v=+document.getElementById('r_'+c).value;if(v>0)S.rates[c]=v});save();closeSheet();render();toast('Профиль сохранён')}
+  if(act==='copyjson'){const ta=document.getElementById('s_json');const fb=()=>{ta.focus();ta.select();toast('Текст выделен — скопируйте его')};
+    try{navigator.clipboard.writeText(ta.value).then(()=>toast('Скопировано'),fb)}catch(_){fb()}}
+  if(act==='importjson'){try{const d=JSON.parse(document.getElementById('s_json').value);if(!d.child||!Array.isArray(d.ops))throw 0;d.goals=d.goals||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};S=d;save();closeSheet();render();toast('Данные загружены')}catch(_){err('Не получилось прочитать текст. Вставьте копию целиком.')}}
+  if(act==='wipe'){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить всё?';return}S=blank('','');save();closeSheet();tab='home';render()}
+});
+document.addEventListener('change',e=>{
+  if(e.target.name==='otype'){const v=document.getElementById('o_amount')?.value;openOp(e.target.value);if(v)document.getElementById('o_amount').value=v;syncBuy();return}
+  if(e.target.name==='rule'){S.fc.rule=e.target.value;save();render()}
+  if(e.target.id==='fc_rate'){S.fc.fundRate=+e.target.value||0;save();render()}
+  if(e.target.id==='fc_top'){S.fc.topup=+e.target.value||0;save();render()}
+  if(e.target.id==='o_src')syncSrc();
+  if(e.target.id==='b_kind'||e.target.id==='o_cur')syncBuy();
+});
+document.addEventListener('input',e=>{if(e.target.closest('.part')||e.target.id==='o_amount')syncBuy()});
+document.addEventListener('submit',e=>{if(e.target.id!=='welcomeForm')return;e.preventDefault();
+  const n=document.getElementById('w_name').value.trim(),b=document.getElementById('w_birth').value;if(!n||!b)return;
+  S=blank(n,b);save();tab='home';render();toast('Профиль создан')});
+render();
+
+/* live CBR rates (works when hosted on its own domain) */
+async function refreshRates(force){
+  try{
+    if(!force&&S.ratesAt&&Date.now()-S.ratesAt<6*3600e3)return;
+    const r=await fetch('https://www.cbr-xml-daily.ru/daily_json.js',{cache:'no-store'});if(!r.ok)return;
+    const d=await r.json();const V=d.Valute||{};let changed=false;
+    for(const c of ['USD','EUR','TRY','KZT']){const v=V[c];if(v&&v.Value&&v.Nominal){S.rates[c]=+(v.Value/v.Nominal).toFixed(4);changed=true}}
+    if(changed){S.ratesAt=Date.now();S.ratesDate=(d.Date||'').slice(0,10);save();if(scrim.hidden)render()}
+  }catch(e){}
+}
+refreshRates();
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshRates()});
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+</script>
+</body>
+</html>
+
