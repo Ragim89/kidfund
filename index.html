@@ -85,6 +85,28 @@ svg{flex:none}
 .pill{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.14);border-radius:999px;padding:5px 10px;font-weight:600;font-size:13px}
 .hero .muted{opacity:.75}
 
+.hk{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.curs{display:flex;gap:2px;background:rgba(255,255,255,.12);border-radius:999px;padding:3px}
+.curs button{border:0;background:none;color:inherit;opacity:.75;font-weight:700;font-size:13px;width:30px;height:26px;border-radius:999px;padding:0}
+.curs button[aria-pressed="true"]{background:var(--hero-ink);color:var(--hero-bg);opacity:1}
+.fchips{display:flex;gap:6px;overflow-x:auto;margin:10px -16px 0;padding:0 16px 2px;scrollbar-width:none}
+.fchips::-webkit-scrollbar{display:none}
+.fchip{flex:none;border:0;background:var(--surface-2);border-radius:999px;padding:7px 12px;font-size:13px;font-weight:600;color:var(--ink-2)}
+.fchip[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.ctotal{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:16px 0 10px}
+.ctotal .money{font-size:26px;font-weight:800;letter-spacing:-.03em}
+.ctotal span{font-size:13px;color:var(--muted)}
+.contrib .stack{margin:0 0 10px}
+.people{display:grid;gap:2px;margin:0 -8px}
+.person{display:flex;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:9px 8px;border-radius:12px;width:100%}
+.person[aria-pressed="true"]{background:var(--accent-soft)}
+.person .dot{width:10px;height:10px;border-radius:3px;flex:none}
+.person .pn{flex:1;min-width:0}
+.person .pn b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .pn span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.person .pv{text-align:right;white-space:nowrap}
+.person .pv b{display:block;font-weight:700}
+.person .pv span{font-size:12px;color:var(--muted)}
 /* quick actions */
 .qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
 .qa button{border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:12px 4px 10px;display:grid;justify-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink-2)}
@@ -500,7 +522,7 @@ function home(){
   const col=k=>k==='income'?'var(--c-income)':`var(${SRC[k].c})`;const lab=k=>k==='income'?'Доход от активов':SRC[k].l;
   const recent=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,4);
   return `<section class="hero">
-    <div class="k">Капитал ребёнка</div>
+    <div class="hk"><span class="k">Капитал ребёнка</span><div class="curs" role="group" aria-label="Валюта">${CURS.map(c=>`<button data-cur="${c}" aria-pressed="${S.child.base===c}" aria-label="${c}">${SYM[c]}</button>`).join('')}</div></div>
     <div class="v money">${money(c.net)}</div>
     ${spark(pts)}
     <div class="row"><span class="pill">К 18 годам ≈ <span class="money">${money(e.net,null,true)}</span></span><span class="muted">+${money(c.rentM,null,true)} в месяц</span></div>
@@ -541,12 +563,62 @@ function opItem(o){
   const m=opMeta(o);const alt=o.cur!==S.child.base?`<small class="money">${money(toBase(o.amount,o.cur),null,true)}</small>`:`<small>${dShort(o.date)}</small>`;
   return `<button class="item" data-op="${o.id}"><span class="ic ${m.t}">${I(m.i)}</span><span class="tx"><b>${esc(m.title)}</b><span>${esc(m.sub||'')}</span></span><span class="am"><span class="money ${m.cls}">${m.sign}${money(o.amount,o.cur)}</span>${alt}</span></button>`;
 }
+/* contributions report: who gave how much, for which period */
+const F={period:'all',from:'',to:'',src:'all',who:null};
+const FSRC=[['all','Все'],['gift','Подарки'],['parentGift','Родители'],['matcap','Маткапитал'],['gov','Пособия'],['loan','Займы'],['earn','Заработок'],['income','Доход']];
+const FPER=[['all','Всё время'],['year','Этот год'],['lastyear','Прошлый год'],['12m','12 месяцев'],['custom','Свой период']];
+function periodRange(){
+  const y=new Date().getFullYear();
+  if(F.period==='year')return [y+'-01-01','9999-12-31'];
+  if(F.period==='lastyear')return [(y-1)+'-01-01',(y-1)+'-12-31'];
+  if(F.period==='12m'){const d=new Date();d.setFullYear(d.getFullYear()-1);return [d.toISOString().slice(0,10),'9999-12-31']}
+  if(F.period==='custom')return [F.from||'0000-01-01',F.to||'9999-12-31'];
+  return ['0000-01-01','9999-12-31'];
+}
+function whoOf(src,from){const f=(from||'').trim();if(f)return f;return src==='matcap'?'Материнский капитал':src==='gov'?'Государство':src==='earn'?S.child.name||'Ребёнок':src==='income'?'Доход от активов':src==='loan'?'Родители':SRC[src]?.l||'Без имени'}
+function contribs(){
+  const out=[];
+  for(const o of S.ops){
+    if(o.type==='in')out.push({op:o.id,date:o.date,src:o.src,who:whoOf(o.src,o.from),v:toBase(o.amount,o.cur)});
+    if(o.type==='income'){const a=asset(o.assetId);out.push({op:o.id,date:o.date,src:'income',who:a?a.name:'Доход от активов',v:toBase(o.amount,o.cur)})}
+    if(o.type==='buy')for(const p of o.parts||[])if(p.src!=='savings')out.push({op:o.id,date:o.date,src:p.src,who:whoOf(p.src,p.from),v:toBase(p.amount,o.cur)});
+  }
+  const [a,b]=periodRange();
+  return out.filter(c=>c.date>=a&&c.date<=b&&(F.src==='all'||c.src===F.src));
+}
+const srcColor=k=>k==='income'?'var(--c-income)':`var(${SRC[k].c})`;
+function contribCard(){
+  const list=contribs();const total=list.reduce((s,c)=>s+c.v,0);
+  const by={};list.forEach(c=>{const k=c.who.toLowerCase();const g=by[k]=by[k]||{who:c.who,v:0,n:0,src:{}};g.v+=c.v;g.n++;g.src[c.src]=(g.src[c.src]||0)+c.v});
+  const rows=Object.values(by).sort((x,y)=>y.v-x.v);
+  const chips=(arr,key)=>arr.map(([k,l])=>`<button class="fchip" data-f-${key}="${k}" aria-pressed="${F[key]===k}">${l}</button>`).join('');
+  const [a,b]=periodRange();
+  const label=F.period==='all'?'за всё время':F.period==='custom'?(F.from||F.to?`${F.from?'с '+new Date(F.from).toLocaleDateString('ru-RU'):''} ${F.to?'по '+new Date(F.to).toLocaleDateString('ru-RU'):''}`:'за свой период'):FPER.find(p=>p[0]===F.period)[1].toLowerCase();
+  return `<div class="card contrib">
+    <div class="cap">Кто сколько внёс</div>
+    <div class="fchips" role="group" aria-label="Период">${chips(FPER,'period')}</div>
+    ${F.period==='custom'?`<div class="g2" style="margin-top:8px"><div class="f" style="margin:0"><label for="f_from">С</label><input id="f_from" type="date" value="${F.from}"></div><div class="f" style="margin:0"><label for="f_to">По</label><input id="f_to" type="date" value="${F.to}"></div></div>`:''}
+    <div class="fchips" role="group" aria-label="Вид средств">${chips(FSRC,'src')}</div>
+    <div class="ctotal"><div><div class="money">${money(total)}</div><span>${label} · ${list.length} ${plural(list.length,['взнос','взноса','взносов'])}</span></div>
+      ${F.who?`<button class="btn sm ghost" data-f-who="">Все люди</button>`:''}</div>
+    ${rows.length?`<div class="stack">${rows.map(r=>`<i style="flex:${r.v};background:${srcColor(Object.entries(r.src).sort((x,y)=>y[1]-x[1])[0][0])}"></i>`).join('')}</div>
+    <div class="people">${rows.map(r=>{const main=Object.entries(r.src).sort((x,y)=>y[1]-x[1])[0][0];const kinds=Object.keys(r.src).map(k=>k==='income'?'доход':SRC[k].l.toLowerCase()).join(', ');
+      return `<button class="person" data-f-who="${esc(r.who)}" aria-pressed="${F.who&&F.who.toLowerCase()===r.who.toLowerCase()}"><span class="dot" style="background:${srcColor(main)}"></span><span class="pn"><b>${esc(r.who)}</b><span>${kinds} · ${r.n} ${plural(r.n,['раз','раза','раз'])}</span></span><span class="pv"><b class="money">${money(r.v,null,true)}</b><span>${total?Math.round(r.v/total*100):0}%</span></span></button>`}).join('')}</div>`
+    :`<div class="empty" style="padding:16px 0 4px">За этот период взносов нет.</div>`}
+  </div>`;
+}
 function opsView(){
-  const list=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date));
-  if(!list.length)return `<h1 class="ptitle">Операции</h1><div class="card empty"><b>Записей пока нет</b>Нажмите «+», чтобы записать подарок, пособие или покупку.</div>`;
+  if(!S.ops.length)return `<h1 class="ptitle">Операции</h1><div class="card empty"><b>Записей пока нет</b>Нажмите «+», чтобы записать подарок, пособие или покупку.</div>`;
+  const filtered=F.period!=='all'||F.src!=='all'||F.who;
+  let list=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date));
+  const fsum={};
+  if(filtered){contribs().filter(c=>!F.who||c.who.toLowerCase()===F.who.toLowerCase()).forEach(c=>fsum[c.op]=(fsum[c.op]||0)+c.v);list=list.filter(o=>o.id in fsum)}
   const groups={};list.forEach(o=>{const k=o.date.slice(0,7);(groups[k]=groups[k]||[]).push(o)});
-  return `<h1 class="ptitle">Операции</h1>`+Object.entries(groups).map(([k,ops])=>{
-    const [y,m]=k.split('-');const inflow=ops.reduce((s,o)=>{if(o.type==='in'||o.type==='income')return s+toBase(o.amount,o.cur);if(o.type==='buy')return s+(o.parts||[]).filter(p=>p.src!=='savings').reduce((q,p)=>q+toBase(p.amount,o.cur),0);return s},0);
+  return `<h1 class="ptitle">Операции</h1>`+contribCard()
+    +`<div class="sec"><h2>${F.who?esc(F.who):filtered?'Записи по фильтру':'Все записи'}</h2><span class="cap">${list.length} ${plural(list.length,['запись','записи','записей'])}</span></div>`
+    +(list.length?'':`<div class="card empty">Нет записей по этому фильтру.</div>`)
+    +Object.entries(groups).map(([k,ops])=>{
+    const [y,m]=k.split('-');const inflow=filtered?ops.reduce((s,o)=>s+(fsum[o.id]||0),0):ops.reduce((s,o)=>{if(o.type==='in'||o.type==='income')return s+toBase(o.amount,o.cur);if(o.type==='buy')return s+(o.parts||[]).filter(p=>p.src!=='savings').reduce((q,p)=>q+toBase(p.amount,o.cur),0);return s},0);
     const nm=MONTHS[+m-1];return `<div class="month"><span>${nm[0].toUpperCase()+nm.slice(1)} ${y}</span><span class="money">+${money(inflow,null,true)}</span></div><div class="list">${ops.map(opItem).join('')}</div>`}).join('')
     +`<p class="fine">Суммы в других валютах пересчитаны по курсу ЦБ РФ из настроек.</p>`;
 }
@@ -782,6 +854,10 @@ document.addEventListener('click',e=>{
   if(t.dataset.saveasset){const a=asset(t.dataset.saveasset);const v=id=>{const el=document.getElementById(id);return el&&el.value!==''?+el.value:null};
     a.value=v('e_value')??a.value;a.share=Math.min(100,Math.max(1,v('e_share')||a.share));
     ['rent','cost','growth','rate'].forEach(k=>{const x=v('e_'+k);if(x!==null)a[k]=x});save();closeSheet();render();return toast('Актив обновлён')}
+  if(t.dataset.cur){const c=t.dataset.cur;if(c!==S.child.base){S.fc.topup=Math.round(toBase(S.fc.topup,S.child.base)*(S.rates[S.child.base]||1)/(S.rates[c]||1));S.child.base=c;save();render()}return}
+  if(t.dataset.fPeriod){F.period=t.dataset.fPeriod;F.who=null;return render()}
+  if(t.dataset.fSrc){F.src=t.dataset.fSrc;F.who=null;return render()}
+  if('fWho' in t.dataset){const w=t.dataset.fWho;F.who=!w||(F.who&&F.who.toLowerCase()===w.toLowerCase())?null:w;render();if(F.who)document.querySelector('.sec')?.scrollIntoView({behavior:'smooth',block:'start'});return}
   const act=t.dataset.action;if(!act)return;
   if(act==='addop')openOp(tab==='assets'?'buy':'in');
   if(act==='close')closeSheet();
@@ -809,6 +885,7 @@ document.addEventListener('change',e=>{
   if(e.target.id==='fc_rate'){S.fc.fundRate=+e.target.value||0;save();render()}
   if(e.target.id==='fc_top'){S.fc.topup=+e.target.value||0;save();render()}
   if(e.target.id==='o_src')syncSrc();
+  if(e.target.id==='f_from'||e.target.id==='f_to'){F[e.target.id==='f_from'?'from':'to']=e.target.value;F.who=null;render()}
   if(e.target.id==='b_kind'||e.target.id==='o_cur')syncBuy();
 });
 document.addEventListener('input',e=>{if(e.target.closest('.part')||e.target.id==='o_amount')syncBuy()});
