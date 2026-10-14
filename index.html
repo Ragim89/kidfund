@@ -422,7 +422,7 @@ input[type=number]{-moz-appearance:textfield}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-const APP_VERSION='1.9';
+const APP_VERSION='1.10';
 const KEY='kidfund.v1';
 const CURS=['RUB','USD','EUR','TRY','KZT'];
 const SYM={RUB:'₽',USD:'$',EUR:'€',TRY:'₺',KZT:'₸'};
@@ -924,8 +924,10 @@ function opBody(type,preset){
     <div class="f" id="fromWrap"><label for="o_from" id="fromLbl">${SRC.gift.from}</label><input id="o_from" placeholder="${SRC.gift.ph}"></div>
     <p class="hint" id="srcHint"></p>`:''}
   ${type==='income'?`<div class="g2"><div class="f"><label for="o_asset">Актив</label><select id="o_asset">${S.assets.map(a=>`<option value="${a.id}">${esc(a.name)}</option>`).join('')||'<option value="">Нет активов</option>'}</select></div>
-    <div class="f"><label for="o_kind">Вид дохода</label><select id="o_kind"><option>аренда</option><option>проценты</option><option>дивиденды</option><option>купон</option><option>другое</option></select></div></div>`:''}
-  ${type==='expense'?`<div class="f"><label for="o_cat">На что</label><select id="o_cat"><option>кружки и секции</option><option>образование</option><option>медицина</option><option>одежда и вещи</option><option>ремонт актива</option><option>налоги</option><option>другое</option></select></div>`:''}
+    <div class="f"><label for="o_kind">Вид дохода</label><select id="o_kind"><option>аренда</option><option>проценты</option><option>дивиденды</option><option>купон</option><option>другое</option></select></div></div>
+    <div class="f" id="kindOtherWrap" hidden><label for="o_kind_other">Что за доход</label><input id="o_kind_other" placeholder="Например, кешбэк, приз"></div>`:''}
+  ${type==='expense'?`<div class="f"><label for="o_cat">На что</label><select id="o_cat"><option>кружки и секции</option><option>образование</option><option>медицина</option><option>одежда и вещи</option><option>ремонт актива</option><option>налоги</option><option>другое</option></select></div>
+    <div class="f" id="catOtherWrap" hidden><label for="o_cat_other">На что именно</label><input id="o_cat_other" placeholder="Например, подарок другу на день рождения"></div>`:''}
   ${type==='repay'?`<div class="f"><label for="o_lender">Кому возвращаем</label>${lenders.length?`<select id="o_lender">${lenders.map(l=>`<option>${esc(l)}</option>`).join('')}</select>`:'<input id="o_lender" placeholder="Папа">'}</div>
     ${lenders.length?'':'<p class="hint">Сейчас у ребёнка нет займов в учёте.</p>'}`:''}
   ${type==='buy'?`<div class="f"><label for="b_name">Что купили</label><input id="b_name" placeholder="Квартира на Ленина, 12"></div>
@@ -946,14 +948,14 @@ function opBody(type,preset){
   <div class="f" id="noteWrap"><label for="o_note">Комментарий</label><input id="o_note" placeholder="Необязательно"></div></div>
   <p class="hint" id="dateHint" style="margin-top:-2px"></p>`;
 }
-function partRow(src,from,amount){
+function partRow(src,from,amount,auto){
   return `<div class="part"><select data-k="src" aria-label="Вид средств">${srcOpts(src||'gift',true)}</select><button type="button" class="rm" data-action="delpart" aria-label="Убрать источник">${I('trash')}</button>
-  <div class="r2"><input data-k="from" placeholder="От кого" value="${esc(from||'')}" aria-label="От кого"><input data-k="amount" type="number" inputmode="decimal" min="0" step="any" placeholder="Сумма" value="${amount??''}" aria-label="Сумма"></div></div>`;
+  <div class="r2"><input data-k="from" placeholder="От кого" value="${esc(from||'')}" aria-label="От кого"><input data-k="amount" type="number" inputmode="decimal" min="0" step="any" placeholder="Сумма" value="${amount??''}" aria-label="Сумма"${auto?' data-auto="1"':''}></div></div>`;
 }
 function openOp(type,preset){
   type=type||'in';
   openSheet('Новая запись',opBody(type,preset),`<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-action="saveop" data-type="${type}">Сохранить</button>`);
-  if(type==='buy'){document.getElementById('parts').innerHTML=partRow('gift')+partRow('parentGift');syncBuy()}
+  if(type==='buy'){document.getElementById('parts').innerHTML=partRow('gift',null,null,true);syncBuy()}
   if(type==='in')syncSrc();
   if(type==='sell')syncSell(true);
   syncDate();
@@ -985,6 +987,7 @@ function syncBuy(){
   sheet.querySelectorAll('.b-rate').forEach(e=>e.hidden=!(kind==='deposit'||kind==='fund'));
   sheet.querySelectorAll('.b-qty').forEach(e=>e.hidden=!(kind==='fund'||kind==='other'));
   const price=+document.getElementById('o_amount').value||0,cur=document.getElementById('o_cur').value;
+  const pa=[...sheet.querySelectorAll('.part [data-k="amount"]')];if(pa.length===1&&pa[0].dataset.auto)pa[0].value=price||'';
   const sum=[...sheet.querySelectorAll('.part [data-k="amount"]')].reduce((s,i)=>s+(+i.value||0),0);const diff=price-sum;
   const pct=price?Math.min(100,sum/price*100):0;const cls=!price?'':Math.abs(diff)<0.005?'full':diff<0?'over':'';
   document.getElementById('meter').innerHTML=`<div class="track"><i class="${cls}" style="width:${pct}%"></i></div><div class="txt"><span class="money">${money(sum,cur)} из ${money(price,cur)}</span><span>${!price?'Укажите цену вверху':Math.abs(diff)<0.005?'<b class="pos">Сходится</b>':diff>0?'Осталось '+money(diff,cur):'<b class="negc">Лишние '+money(-diff,cur)+'</b>'}</span></div>`;
@@ -995,8 +998,8 @@ function saveOp(type){
   if(!(amount>0))return err('Введите сумму больше нуля.');
   const repOn=!!document.getElementById('o_rep')?.checked;
   if(type==='in'){o.src=g('o_src');o.from=SRC[o.src].from?g('o_from'):'';if(o.src==='loan'&&!o.from)o.from='Родители'}
-  if(type==='income'){o.assetId=g('o_asset');o.kind=g('o_kind');if(!o.assetId)return err('Сначала добавьте актив, который приносит доход.')}
-  if(type==='expense'){o.cat=g('o_cat')}
+  if(type==='income'){o.assetId=g('o_asset');o.kind=g('o_kind');if(o.kind==='другое'&&g('o_kind_other'))o.kind=g('o_kind_other');if(!o.assetId)return err('Сначала добавьте актив, который приносит доход.')}
+  if(type==='expense'){o.cat=g('o_cat');if(o.cat==='другое'){const x=g('o_cat_other');if(!x)return err('Напишите, на что именно потратили.');o.cat=x}}
   if(type==='repay'){o.from=g('o_lender')||'Родители';const owed=compute().loans[o.from]||0;if(toBase(amount,o.cur)>owed+0.5)return err(owed>0.5?`Ребёнок должен ${o.from} только ${money(owed)}.`:'У ребёнка нет долга перед '+o.from+'.')}
   if(type==='buy'){
     const name=g('b_name');if(!name)return err('Напишите, что купили.');
@@ -1132,7 +1135,7 @@ document.addEventListener('click',e=>{
   if(act==='addop')openOp(tab==='assets'?'buy':'in');
   if(act==='close')closeSheet();
   if(act==='saveop')saveOp(t.dataset.type);
-  if(act==='addpart'){document.getElementById('parts').insertAdjacentHTML('beforeend',partRow('gift'));syncBuy()}
+  if(act==='addpart'){sheet.querySelectorAll('.part [data-auto]').forEach(i=>delete i.dataset.auto);document.getElementById('parts').insertAdjacentHTML('beforeend',partRow('parentGift'));syncBuy();sheet.querySelector('.part:last-child [data-k="amount"]')?.focus()}
   if(act==='delpart'){t.closest('.part').remove();syncBuy()}
   if(act==='settings')settings();
   if(act==='addgoal')goalForm();
@@ -1164,13 +1167,15 @@ document.addEventListener('change',e=>{
   if(e.target.id==='fc_rate'){S.fc.fundRate=+e.target.value||0;save();render()}
   if(e.target.id==='fc_top'){S.fc.topup=+e.target.value||0;save();render()}
   if(e.target.id==='o_src')syncSrc();
+  if(e.target.id==='o_cat'){const w=document.getElementById('catOtherWrap');w.hidden=e.target.value!=='другое';if(!w.hidden)document.getElementById('o_cat_other').focus()}
+  if(e.target.id==='o_kind'){const w=document.getElementById('kindOtherWrap');w.hidden=e.target.value!=='другое';if(!w.hidden)document.getElementById('o_kind_other').focus()}
   if(e.target.id==='o_rep'||e.target.id==='o_date')syncDate();
   if(e.target.id==='sl_asset')syncSell(true);
   if(e.target.id==='o_cur')syncSell();
   if(e.target.id==='f_from'||e.target.id==='f_to'){F[e.target.id==='f_from'?'from':'to']=e.target.value;F.who=null;render()}
   if(e.target.id==='b_kind'||e.target.id==='o_cur')syncBuy();
 });
-document.addEventListener('input',e=>{if(e.target.closest('.part')||e.target.id==='o_amount')syncBuy();if(e.target.id==='o_amount'||e.target.id==='sl_qty')syncSell()});
+document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.k==='amount')delete e.target.dataset.auto;if(e.target.closest('.part')||e.target.id==='o_amount')syncBuy();if(e.target.id==='o_amount'||e.target.id==='sl_qty')syncSell()});
 document.addEventListener('submit',e=>{if(e.target.id!=='welcomeForm')return;e.preventDefault();
   const n=document.getElementById('w_name').value.trim(),b=document.getElementById('w_birth').value;if(!n||!b)return;
   S=blank(n,b);save();tab='home';render();toast('Профиль создан')});
