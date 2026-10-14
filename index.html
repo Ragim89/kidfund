@@ -492,7 +492,11 @@ input[type=number]{-moz-appearance:textfield}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-const APP_VERSION='2.1';
+const APP_VERSION='2.2';
+const BGS=[['auto','Авто','linear-gradient(135deg,#F2F2F7 50%,#000 50%)','linear-gradient(90deg,#fff 50%,#1C1C1E 50%)'],['light','Светлый','#F2F2F7','#fff'],['dark','Тёмный','#000','#1C1C1E'],['warm','Тёплый','#F6F1E9','#fff'],
+  ['mint','Мятный','#EAF4EF','#fff'],['sky','Небо','#EAF1FA','#fff'],['blush','Пудра','#F8EDF1','#fff'],['navy','Ночь','#0B1220','#141C2E']];
+const BG_DARK={dark:1,navy:1,choco:1};
+const SKINS=[['emerald','Изумруд','#0E6E59','#0A5747','#fff'],['ocean','Океан','#1A57B5','#123F86','#fff'],['lavender','Лаванда','#6347BE','#4A3396','#fff'],['rose','Роза','#C23E78','#952C5B','#fff'],['graphite','Графит','#262B31','#14181C','#F3E6C8']];
 const KEY='kidfund.v1';
 const CURS=['RUB','USD','EUR','TRY','KZT'];
 const SYM={RUB:'₽',USD:'$',EUR:'€',TRY:'₺',KZT:'₸'};
@@ -1267,15 +1271,16 @@ document.addEventListener('input',e=>{if(e.target.dataset&&e.target.dataset.k===
 document.addEventListener('submit',e=>{if(e.target.id!=='welcomeForm')return;e.preventDefault();
   const n=document.getElementById('w_name').value.trim(),b=document.getElementById('w_birth').value;if(!n||!b)return;
   S=blank(n,b);save();tab='home';render();toast('Профиль создан')});
-render();
+try{render()}catch(e){
+  try{document.documentElement.removeAttribute('data-bg');document.documentElement.removeAttribute('data-theme')}catch(_){}
+  document.getElementById('view').innerHTML=`<div class="card" style="margin-top:20px"><b style="font-size:18px">Не удалось открыть экран</b>
+  <p class="hint" style="margin:8px 0 14px">Ваши записи сохранены. Нажмите «Исправить» — сбросятся только настройки вида. Ошибка: ${esc(e&&e.message||e)}</p>
+  <button class="btn wide" onclick="try{FAM.bg='auto';Object.values(FAM.kids).forEach(k=>{delete k.skin});persist()}catch(_){};location.reload()">Исправить</button></div>`;
+}
 if(ACCRUED)setTimeout(()=>toast('Начислено ежемесячных поступлений: '+ACCRUED),700);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;const n=accrueAll();if(n){S=FAM.kids[FAM.active];if(scrim.hidden)render();toast('Начислено ежемесячных поступлений: '+n)}});
 
 /* color themes */
-const SKINS=[['emerald','Изумруд','#0E6E59','#0A5747','#fff'],['ocean','Океан','#1A57B5','#123F86','#fff'],['lavender','Лаванда','#6347BE','#4A3396','#fff'],['rose','Роза','#C23E78','#952C5B','#fff'],['graphite','Графит','#262B31','#14181C','#F3E6C8']];
-const BGS=[['auto','Авто','linear-gradient(135deg,#F2F2F7 50%,#000 50%)','linear-gradient(90deg,#fff 50%,#1C1C1E 50%)'],['light','Светлый','#F2F2F7','#fff'],['dark','Тёмный','#000','#1C1C1E'],['warm','Тёплый','#F6F1E9','#fff'],
-  ['mint','Мятный','#EAF4EF','#fff'],['sky','Небо','#EAF1FA','#fff'],['blush','Пудра','#F8EDF1','#fff'],['navy','Ночь','#0B1220','#141C2E']];
-const BG_DARK={dark:1,navy:1,choco:1};
 function applyBg(){const k=FAM.bg||'auto',r=document.documentElement;
   if(k==='auto')delete r.dataset.theme;else r.dataset.theme=BG_DARK[k]?'dark':'light';
   if(k==='auto'||k==='light'||k==='dark')delete r.dataset.bg;else r.dataset.bg=k;
