@@ -422,7 +422,7 @@ input[type=number]{-moz-appearance:textfield}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-const APP_VERSION='1.10';
+const APP_VERSION='1.11';
 const KEY='kidfund.v1';
 const CURS=['RUB','USD','EUR','TRY','KZT'];
 const SYM={RUB:'₽',USD:'$',EUR:'€',TRY:'₺',KZT:'₸'};
@@ -1096,6 +1096,10 @@ function settings(){
   <div class="g2">${CURS.filter(c=>c!=='RUB').map(c=>`<div class="f"><label for="r_${c}">1 ${c}, ₽</label><input id="r_${c}" type="number" inputmode="decimal" step="any" value="${S.rates[c]}"></div>`).join('')}</div>
   <p class="hint">${S.ratesDate?`Курсы ЦБ РФ на ${new Date(S.ratesDate).toLocaleDateString('ru-RU')}, обновляются автоматически. Можно поправить вручную.`:'Курсы обновятся по ЦБ РФ автоматически, когда появится интернет. Можно задать вручную.'}</p>
   <button class="btn wide" data-action="savesettings">Сохранить профиль</button>
+  <div class="grp">Семья</div>
+  <p class="hint">Чтобы у мужа и жены были одинаковые записи: один нажимает «Отправить семье» и шлёт файл в Telegram или WhatsApp, второй сохраняет файл в «Файлы» и нажимает «Получить от семьи». Записи объединяются, а удалённое удаляется у обоих.${S.syncAt?' Последнее объединение: '+new Date(S.syncAt).toLocaleDateString('ru-RU')+'.':''}</p>
+  <div class="g2"><button class="btn" data-action="sendfamily">Отправить семье</button><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer" for="s_merge">Получить от семьи</label></div>
+  <input type="file" id="s_merge" accept=".json,application/json" hidden>
   <div class="grp">Резервная копия</div>
   <p class="hint">Записи хранятся только на этом телефоне. Сохраняйте копию в iCloud Drive раз в месяц — с ней всё восстановится на любом телефоне.${S.backupAt?` Последняя копия: ${new Date(S.backupAt).toLocaleDateString('ru-RU')}.`:' Копия ещё не сохранялась.'}</p>
   <div class="g2"><button class="btn" data-action="backupfile">Сохранить копию</button><label class="btn ghost" style="display:grid;place-items:center;cursor:pointer" for="s_file">Восстановить из файла</label></div>
@@ -1115,16 +1119,16 @@ document.addEventListener('click',e=>{
   if(t.dataset.newop)return openOp(t.dataset.newop);
   if(t.dataset.op)return opDetail(t.dataset.op);
   if(t.dataset.asset)return assetEdit(t.dataset.asset);
-  if(t.dataset.delgoal){S.goals=S.goals.filter(g=>g.id!==t.dataset.delgoal);save();render();return toast('Цель удалена')}
+  if(t.dataset.delgoal){tomb(t.dataset.delgoal);S.goals=S.goals.filter(g=>g.id!==t.dataset.delgoal);save();render();return toast('Цель удалена')}
   if(t.dataset.delop){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить?';return}
-    const o=S.ops.find(x=>x.id===t.dataset.delop);S.ops=S.ops.filter(x=>x.id!==o.id);if(o.type==='buy'){S.assets=S.assets.filter(a=>a.id!==o.assetId);S.ops=S.ops.filter(x=>!(x.type==='sell'&&x.assetId===o.assetId))}save();closeSheet();render();return toast('Запись удалена')}
+    const o=S.ops.find(x=>x.id===t.dataset.delop);tomb(o.id);S.ops=S.ops.filter(x=>x.id!==o.id);if(o.type==='buy'){tomb(o.assetId);S.ops.filter(x=>x.type==='sell'&&x.assetId===o.assetId).forEach(x=>tomb(x.id));S.assets=S.assets.filter(a=>a.id!==o.assetId);S.ops=S.ops.filter(x=>!(x.type==='sell'&&x.assetId===o.assetId))}save();closeSheet();render();return toast('Запись удалена')}
   if(t.dataset.saveasset){const a=asset(t.dataset.saveasset);const v=id=>{const el=document.getElementById(id);return el&&el.value!==''?+el.value:null};
-    const est=v('e_est');if(est===null){delete a.est;delete a.estDate}else if(est!==a.est){a.est=est;a.estDate=today()}a.share=Math.min(100,Math.max(1,v('e_share')||a.share));
+    const est=v('e_est');if(est===null){delete a.est;delete a.estDate}else if(est!==a.est){a.est=est;a.estDate=today()}a.share=Math.min(100,Math.max(1,v('e_share')||a.share));a.upd=Date.now();
     ['rent','cost','growth','rate'].forEach(k=>{const x=v('e_'+k);if(x!==null)a[k]=x});save();closeSheet();render();return toast('Актив обновлён')}
   if(t.dataset.rec)return recDetail(t.dataset.rec);
   if(t.dataset.sellasset)return openOp('sell',t.dataset.sellasset);
   if(t.dataset.stoprec){const r=S.recs.find(x=>x.id===t.dataset.stoprec);if(r){r.stopped=true;if(!r.end||r.end>today())r.end=today()}save();closeSheet();render();return toast('Повтор остановлен')}
-  if(t.dataset.delrec){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить?';return}S.recs=S.recs.filter(x=>x.id!==t.dataset.delrec);save();closeSheet();render();return toast('Повтор удалён, записи остались')}
+  if(t.dataset.delrec){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить?';return}tomb(t.dataset.delrec);S.recs=S.recs.filter(x=>x.id!==t.dataset.delrec);save();closeSheet();render();return toast('Повтор удалён, записи остались')}
   if(t.dataset.kid){if(t.dataset.kid===FAM.active)closeSheet();else switchKid(t.dataset.kid);return}
   if(t.dataset.skin){S.skin=t.dataset.skin;save();applySkin();render();settings();sheet.querySelector('#shb').scrollTop=0;return}
   if(t.dataset.cur){const c=t.dataset.cur;if(c!==S.child.base){S.fc.topup=Math.round(toBase(S.fc.topup,S.child.base)*(S.rates[S.child.base]||1)/(S.rates[c]||1));S.child.base=c;save();render()}return}
@@ -1149,6 +1153,7 @@ document.addEventListener('click',e=>{
   if(act==='copyjson'){const ta=document.getElementById('s_json');const fb=()=>{ta.focus();ta.select();toast('Текст выделен — скопируйте его')};
     try{navigator.clipboard.writeText(ta.value).then(()=>toast('Скопировано'),fb)}catch(_){fb()}}
   if(act==='backupfile')backupFile();
+  if(act==='sendfamily')sendFamily();
   if(act==='kids')kidsSheet();
   if(act==='addkid')addKidForm();
   if(act==='savekid'){const n=document.getElementById('k_name').value.trim(),b=document.getElementById('k_birth').value;if(!n||!b)return err('Введите имя и дату рождения.');
@@ -1248,6 +1253,59 @@ document.addEventListener('change',e=>{
 });
 
 /* backup to a file (iCloud Drive via the share sheet) and restore */
+/* family sync by file: merge records, propagate deletions */
+function tomb(id){if(!id)return;S.deleted=S.deleted||[];if(!S.deleted.includes(id))S.deleted.push(id)}
+function mergeKid(L,R){
+  fixKid(L);fixKid(R);const st={ops:0,assets:0,goals:0,recs:0,removed:0};
+  const del=new Set([...(L.deleted||[]),...(R.deleted||[])]);L.deleted=[...del];
+  const had=new Set([...L.ops,...L.assets,...L.goals,...L.recs].map(x=>x.id));
+  const map=a=>new Map(a.map(x=>[x.id,x]));
+  const la=map(L.assets);for(const a of R.assets){const m=la.get(a.id);if(!m){L.assets.push(a);if(!del.has(a.id))st.assets++}else if((a.upd||0)>(m.upd||0))Object.assign(m,a)}
+  const lg=map(L.goals);for(const g of R.goals)if(!lg.has(g.id)){L.goals.push(g);if(!del.has(g.id))st.goals++}
+  const lr=map(L.recs);for(const r of R.recs){const m=lr.get(r.id);if(!m){L.recs.push(r);if(!del.has(r.id))st.recs++}else{if((r.last||'')>(m.last||''))m.last=r.last;if(r.stopped){m.stopped=true;m.end=r.end}}}
+  const lo=map(L.ops);const rk=new Set(L.ops.filter(o=>o.rec).map(o=>o.rec+'|'+o.date));
+  for(const o of R.ops){if(lo.has(o.id))continue;if(o.rec){const k=o.rec+'|'+o.date;if(rk.has(k))continue;rk.add(k)}L.ops.push(o);if(!del.has(o.id))st.ops++}
+  for(const k of ['ops','assets','goals','recs'])L[k]=L[k].filter(x=>!del.has(x.id));
+  const now=new Set([...L.ops,...L.assets,...L.goals,...L.recs].map(x=>x.id));had.forEach(id=>{if(!now.has(id))st.removed++});
+  if(!L.child.photo&&R.child.photo)L.child.photo=R.child.photo;
+  if((R.ratesAt||0)>(L.ratesAt||0)){L.rates=R.rates;L.ratesAt=R.ratesAt;L.ratesDate=R.ratesDate}
+  L.syncAt=Date.now();return st;
+}
+function mergeFamily(d){
+  if(d&&d.child&&Array.isArray(d.ops))d={kids:{['k'+uid()]:d}};
+  if(!d||!d.kids)throw new Error('bad');
+  const inc=Object.entries(d.kids).filter(([,k])=>k&&k.child&&k.child.name&&!k.example);
+  if(!inc.length)throw new Error('empty');
+  for(const [id,k] of Object.entries(FAM.kids))if(k.example||!k.child||!k.child.name)delete FAM.kids[id];
+  const tot={ops:0,assets:0,goals:0,recs:0,removed:0,kids:0};
+  for(const [id,k] of inc){
+    const lid=FAM.kids[id]?id:Object.keys(FAM.kids).find(x=>{const c=FAM.kids[x].child;return c.name.trim().toLowerCase()===k.child.name.trim().toLowerCase()&&c.birth===k.child.birth});
+    if(!lid){const nk=fixKid(JSON.parse(JSON.stringify(k)));nk.syncAt=Date.now();FAM.kids[id]=nk;tot.kids++;tot.ops+=nk.ops.length;tot.assets+=nk.assets.length;continue}
+    const r=mergeKid(FAM.kids[lid],k);for(const x in r)tot[x]+=r[x];
+  }
+  if(!FAM.kids[FAM.active])FAM.active=Object.keys(FAM.kids)[0];
+  Object.values(FAM.kids).forEach(accrue);S=FAM.kids[FAM.active];persist();return tot;
+}
+async function sendFamily(){
+  const name='kidfund-семья-'+today()+'.json';
+  const blob=new Blob([JSON.stringify({...FAM,kind:'kidfund-family',sentAt:Date.now()})],{type:'application/json'});
+  const file=new File([blob],name,{type:'application/json'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'KidFund: записи для семьи'});return toast('Отправлено')}}catch(e){if(e&&e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);toast('Файл сохранён — отправьте его семье');
+}
+document.addEventListener('change',e=>{
+  if(e.target.id!=='s_merge'||!e.target.files[0])return;
+  const rd=new FileReader();rd.onload=()=>{let t;
+    try{t=mergeFamily(JSON.parse(rd.result))}catch(x){return err(x&&x.message==='empty'?'В файле нет записей детей.':'Это не файл KidFund. Выберите файл kidfund-семья-….json.')}
+    ANIM=true;tab='home';render();if(t.ops+t.assets+t.kids>0)confetti();
+    const rows=[['Новых записей',t.ops],['Новых активов',t.assets],['Новых целей',t.goals],['Новых повторов',t.recs],['Новых детей',t.kids],['Удалено (удалили на другом телефоне)',t.removed]].filter(r=>r[1]);
+    openSheet('Записи объединены',`<div class="dhead"><span class="ic t-in">${I('check')}</span><b>${t.ops+t.assets+t.kids+t.removed?'Готово':'Всё уже совпадало'}</b><span>Ваши записи и записи из файла теперь вместе</span></div>
+      ${rows.length?`<div class="rows">${rows.map(r=>`<div><span>${r[0]}</span><b>${r[1]}</b></div>`).join('')}</div>`:''}
+      <p class="hint" style="margin-top:12px">Чтобы на втором телефоне тоже всё сошлось, отправьте свою копию обратно.</p>`,
+      `<button class="btn ghost" data-action="close">Готово</button><button class="btn" data-action="sendfamily">Отправить обратно</button>`);
+  };rd.readAsText(e.target.files[0]);
+});
+
 async function backupFile(){
   const name='kidfund-'+(kidList().length>1?'family':(S.child.name||'data').replace(/[^\wа-яё-]+/gi,'_'))+'-'+today()+'.json';
   const prev=S.backupAt;const now=Date.now();S.backupAt=now;save();Object.values(FAM.kids).forEach(k=>k.backupAt=now);
