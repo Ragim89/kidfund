@@ -134,6 +134,20 @@ svg{flex:none}
 .who b{display:flex!important;align-items:center;gap:4px}
 .who .dd{width:16px;height:16px;color:var(--muted);flex:none}
 .who .kc{font-size:11px;font-weight:700;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 7px}
+.item.planned .ic{background:transparent;border:1.5px dashed currentColor}
+.item.planned .am .money{opacity:.7}
+.item .tx span svg.rpt{width:12px;height:12px;vertical-align:-1px;margin-right:4px;display:inline}
+.acard.planned{box-shadow:none;border:1.5px dashed var(--line)}
+.muted2{color:var(--muted)}
+.invsum .big{font-size:28px;font-weight:800;letter-spacing:-.03em;margin-top:2px}
+.rep{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface-2);border-radius:14px;padding:12px 14px;margin:2px 0 4px;font-weight:600;font-size:14px;cursor:pointer}
+.rep span{display:flex;align-items:center;gap:8px}
+.rep svg{width:18px;height:18px;color:var(--accent)}
+.rep input{appearance:none;-webkit-appearance:none;width:46px;height:28px;border-radius:14px;background:var(--line);position:relative;flex:none;margin:0;cursor:pointer;transition:background .2s}
+.rep input::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.rep input:checked{background:var(--accent)}
+.rep input:checked::after{transform:translateX(18px)}
+.shf .btn svg{width:16px;height:16px;vertical-align:-3px}
 /* quick actions */
 .qa{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
 .qa button{border:0;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:12px 4px 10px;display:grid;justify-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink-2)}
@@ -408,7 +422,7 @@ input[type=number]{-moz-appearance:textfield}
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script>
-const APP_VERSION='1.8';
+const APP_VERSION='1.9';
 const KEY='kidfund.v1';
 const CURS=['RUB','USD','EUR','TRY','KZT'];
 const SYM={RUB:'₽',USD:'$',EUR:'€',TRY:'₺',KZT:'₸'};
@@ -423,7 +437,7 @@ const SRC={
 };
 const KIND={realty:'Недвижимость',deposit:'Банковский вклад',fund:'Акции и фонды',other:'Другое'};
 const KIND_I={realty:'home',deposit:'bank',fund:'chart',other:'box'};
-const TYPES={in:['Поступление','down','t-in'],buy:['Покупка','home','t-buy'],income:['Доход','up','t-inc'],expense:['Расход','out','t-exp'],repay:['Возврат займа','back','t-loan']};
+const TYPES={in:['Поступление','down','t-in'],buy:['Покупка','home','t-buy'],sell:['Продажа','tag','t-inc'],income:['Доход','up','t-inc'],expense:['Расход','out','t-exp'],repay:['Возврат займа','back','t-loan']};
 const STAGES=[
   [0,3,'Младенчество','Собираем подарки и выплаты, делаем крупную покупку на долгий срок.'],
   [3,7,'Дошкольный возраст','Доход от активов реинвестируем, ребёнок знакомится с копилкой.'],
@@ -455,17 +469,23 @@ const P={
   trash:'<path d="M5 7h14M10 7V5h4v2M7 7l1 13h8l1-13"/>',
   info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>',
   check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
-  chev:'<path d="m9 6 6 6-6 6"/>'
+  chev:'<path d="m9 6 6 6-6 6"/>',
+  tag:'<path d="M3.5 12.3V4.5a1 1 0 0 1 1-1h7.8l8.2 8.2a1.5 1.5 0 0 1 0 2.1l-6.7 6.7a1.5 1.5 0 0 1-2.1 0z"/><circle cx="8" cy="8" r="1.5"/>',
+  repeat:'<path d="M17 2.5 20.5 6 17 9.5"/><path d="M3.5 11.5V10a4 4 0 0 1 4-4h13"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M20.5 12.5V14a4 4 0 0 1-4 4h-13"/>',
+  pie:'<path d="M12 3.5a8.5 8.5 0 1 0 8.5 8.5H12z"/><path d="M15 3.6A8.5 8.5 0 0 1 20.4 9H15z"/>',
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'
 };
 const I=(n,cls)=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" ${cls?`class="${cls}"`:''} aria-hidden="true">${P[n]}</svg>`;
 const uid=()=>Math.random().toString(36).slice(2,10);
-const today=()=>new Date().toISOString().slice(0,10);
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const fmtQty=n=>(+n).toLocaleString('ru-RU',{maximumFractionDigits:6});
+const fDate=d=>new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'long',year:'numeric'}).replace(/\s?г\.$/,'');
 
 function example(){
   const birth=new Date();birth.setMonth(birth.getMonth()-1);
   const b=birth.toISOString().slice(0,10);
   const a1=uid(),a2=uid();
-  return {example:true,child:{name:'Миша',birth:b,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},
+  const ex={example:true,child:{name:'Миша',birth:b,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},
     assets:[
       {id:a1,name:'Квартира-студия',kind:'realty',cur:'USD',price:50000,value:50000,share:100,rent:400,cost:25,growth:3,rate:0},
       {id:a2,name:'Вклад «Детский»',kind:'deposit',cur:'RUB',price:150000,value:150000,share:100,rent:0,cost:0,growth:0,rate:14}],
@@ -476,9 +496,13 @@ function example(){
         {src:'matcap',from:'',amount:8000},{src:'gift',from:'Бабушки и дедушки',amount:2500},{src:'gov',from:'Пособия',amount:1500},{src:'parentGift',from:'Папа',amount:38000}]},
       {id:uid(),type:'buy',date:today(),assetId:a2,amount:150000,cur:'RUB',note:'',parts:[{src:'savings',from:'',amount:60000},{src:'gift',from:'Крёстный',amount:90000}]}],
     goals:[{id:uid(),name:'Образование',amount:3000000,cur:'RUB',age:17},{id:uid(),name:'Первая машина',amount:1500000,cur:'RUB',age:18}],
+    recs:[{id:uid(),type:'in',amount:20000,cur:'RUB',src:'gov',from:'Ежемесячное пособие',note:'',start:b,day:+b.slice(8),end:'',last:''}],
     fc:{rule:'debt',fundRate:8,topup:0}};
+  const y1=new Date(b);y1.setFullYear(y1.getFullYear()+1);
+  ex.ops.push({id:uid(),type:'in',date:y1.toISOString().slice(0,10),amount:30000,cur:'RUB',src:'gift',from:'Бабушка Нина',note:'На первый день рождения'});
+  return ex;
 }
-function blank(name,birth){return {example:false,child:{name,birth,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},assets:[],ops:[],goals:[],fc:{rule:'debt',fundRate:8,topup:0}}}
+function blank(name,birth){return {example:false,child:{name,birth,base:'RUB'},rates:{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16},assets:[],ops:[],goals:[],recs:[],fc:{rule:'debt',fundRate:8,topup:0}}}
 let S=null,tab='home';
 let ANIM=true,POP=null;const LASTV={};
 const REDUCED=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -488,10 +512,20 @@ let FAM=null;
 function load(){try{const r=localStorage.getItem(KEY);if(r)return JSON.parse(r)}catch(e){}return null}
 function persist(){try{localStorage.setItem(FKEY,JSON.stringify(FAM))}catch(e){}}
 function save(){FAM.kids[FAM.active]=S;persist()}
-function fixKid(d){d.goals=d.goals||[];d.assets=d.assets||[];d.ops=d.ops||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};d.rates=d.rates||{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16};return d}
+function fixKid(d){d.recs=d.recs||[];(d.assets||[]).forEach(a=>{if(a.est===undefined&&a.value!==undefined&&Math.abs(a.value-a.price)>0.005)a.est=a.value});d.goals=d.goals||[];d.assets=d.assets||[];d.ops=d.ops||[];d.fc=d.fc||{rule:'debt',fundRate:8,topup:0};d.rates=d.rates||{RUB:1,USD:82,EUR:95,TRY:2,KZT:0.16};return d}
 try{FAM=JSON.parse(localStorage.getItem(FKEY))}catch(e){}
 if(!FAM||!FAM.kids||!FAM.kids[FAM.active]){const id='k'+uid();FAM={active:id,kids:{[id]:load()||example()}}}
 S=fixKid(FAM.kids[FAM.active]);
+/* scheduled & monthly money */
+function addMonth(ym,n){let [y,m]=ym.split('-').map(Number);m+=n;y+=Math.floor((m-1)/12);m=((m-1)%12+12)%12+1;return y+'-'+String(m).padStart(2,'0')}
+function dayIn(ym,day){const [y,m]=ym.split('-').map(Number);const dim=new Date(y,m,0).getDate();return ym+'-'+String(Math.min(day,dim)).padStart(2,'0')}
+function nextRecDate(r){if(r.stopped)return null;const d=dayIn(r.last?addMonth(r.last,1):r.start.slice(0,7),r.day);return r.end&&d>r.end?null:d}
+function accrue(kid){let n=0;const T=today();
+  for(const r of kid.recs||[]){let g=0;while(g++<400){const d=nextRecDate(r);if(!d||d>T)break;
+    kid.ops.push({id:uid(),type:r.type,date:d,amount:r.amount,cur:r.cur,src:r.src,from:r.from,assetId:r.assetId,kind:r.kind,cat:r.cat,note:r.note,rec:r.id});r.last=d.slice(0,7);n++}}
+  return n}
+function accrueAll(){let n=0;Object.values(FAM.kids).forEach(k=>{fixKid(k);n+=accrue(k)});if(n)persist();return n}
+let ACCRUED=accrueAll();
 function kidList(){return Object.entries(FAM.kids).filter(([,k])=>k.child&&k.child.name)}
 function withKid(k,fn){const p=S;S=k;try{return fn()}finally{S=p}}
 function switchKid(id){if(!FAM.kids[id])return;ANIM=true;FAM.active=id;S=fixKid(FAM.kids[id]);persist();F.period='all';F.src='all';F.who=null;F.from=F.to='';tab='home';closeSheet();render();window.scrollTo({top:0})}
@@ -523,31 +557,48 @@ const MONTHS=['январь','февраль','март','апрель','май'
 const dShort=d=>new Date(d).toLocaleDateString('ru-RU',{day:'numeric',month:'short'}).replace('.','');
 
 /* maths (unchanged logic) */
+function assetState(a,at){at=at||today();
+  const buy=S.ops.find(o=>o.type==='buy'&&o.assetId===a.id);
+  if(buy&&buy.date>at)return {owned:false,future:true,cost:a.price,qty:a.qty||0,buy};
+  let cost=a.price,qty=a.qty||0;
+  for(const o of S.ops)if(o.type==='sell'&&o.assetId===a.id&&o.date<=at){cost-=o.cost;if(o.qty)qty-=o.qty}
+  return {owned:cost>0.005&&(!a.qty||qty>1e-9),cost:Math.max(0,cost),qty:Math.max(0,qty),buy};
+}
+function sellProfit(o){const a=asset(o.assetId);const sh=(a?a.share:100)/100;return (toBase(o.amount,o.cur)-toBase(o.cost,a?a.cur:o.cur))*sh}
 function compute(){
-  let cash=0;const loans={},src={};const add=(k,v)=>src[k]=(src[k]||0)+v;
-  for(const o of S.ops){const v=toBase(o.amount,o.cur);
+  const T=today();let cash=0,realized=0;const loans={},src={};const add=(k,v)=>src[k]=(src[k]||0)+v;
+  for(const o of S.ops){if(o.date>T)continue;const v=toBase(o.amount,o.cur);
+    if(o.type==='sell'){const a=asset(o.assetId);const sh=(a?a.share:100)/100;cash+=v*sh;const pr=sellProfit(o);realized+=pr;if(pr>0)add('income',pr)}
     if(o.type==='in'){cash+=v;add(o.src,v);if(o.src==='loan'){const k=o.from||'Родители';loans[k]=(loans[k]||0)+v}}
     if(o.type==='income'){cash+=v;add('income',v)}
     if(o.type==='expense')cash-=v;
     if(o.type==='repay'){cash-=v;const k=o.from||'Родители';loans[k]=(loans[k]||0)-v}
     if(o.type==='buy')for(const p of o.parts||[]){const pv=toBase(p.amount,o.cur);
       if(p.src==='savings')cash-=pv;else{add(p.src,pv);if(p.src==='loan'){const k=p.from||'Родители';loans[k]=(loans[k]||0)+pv}}}}
-  let assets=0,rentM=0;
-  for(const a of S.assets){assets+=toBase(a.value,a.cur)*a.share/100;if(a.kind==='realty')rentM+=toBase(a.rent,a.cur)*(1-a.cost/100)*a.share/100}
+  let assets=0,rentM=0,recM=0;
+  for(const a of S.assets){const st=assetState(a,T);if(!st.owned)continue;assets+=toBase(st.cost,a.cur)*a.share/100;if(a.kind==='realty')rentM+=toBase(a.rent,a.cur)*(1-a.cost/100)*a.share/100}
+  for(const r of S.recs||[])if(!r.stopped&&r.type==='in'&&r.start<=T&&(!r.end||r.end>=T))recM+=toBase(r.amount,r.cur);
   const debt=Object.values(loans).reduce((s,v)=>s+Math.max(0,v),0);
-  return {cash,loans,src,assets,debt,rentM,net:cash+assets-debt};
+  return {cash,loans,src,assets,debt,rentM,monthly:rentM+recM,realized,net:cash+assets-debt};
 }
 function forecast(rule){
   rule=rule||S.fc.rule;const c=compute();const start=ageYears();const left=Math.max(0,18-start);
-  const realty=S.assets.filter(a=>a.kind==='realty').map(a=>({v:toBase(a.value,a.cur)*a.share/100,rent:toBase(a.rent,a.cur)*12*(1-a.cost/100)*a.share/100,g:a.growth/100}));
-  const growing=S.assets.filter(a=>a.kind!=='realty').map(a=>({v:toBase(a.value,a.cur)*a.share/100,r:(a.kind==='other'?a.growth:a.rate)/100}));
+  const T=today(),now=new Date(T).getTime(),Y=365.25*864e5,b18=new Date(S.child.birth);b18.setFullYear(b18.getFullYear()+18);
+  const own=S.assets.map(a=>({a,st:assetState(a,T)})).filter(x=>x.st.owned);
+  const realty=own.filter(x=>x.a.kind==='realty').map(({a,st})=>({v:toBase(st.cost,a.cur)*a.share/100,rent:toBase(a.rent,a.cur)*12*(1-a.cost/100)*a.share/100,g:a.growth/100}));
+  const growing=own.filter(x=>x.a.kind!=='realty').map(({a,st})=>({v:toBase(st.cost,a.cur)*a.share/100,r:(a.kind==='other'?a.growth:a.rate)/100}));
+  const flows=(d0,d1)=>{let s=0;
+    for(const o of S.ops){if(o.date<=T)continue;const d=new Date(o.date).getTime();if(d>d0&&d<=d1){const v=toBase(o.amount,o.cur);if(o.type==='in'||o.type==='income')s+=v;else if(o.type==='expense')s-=v}}
+    for(const r of S.recs||[]){if(r.stopped||r.type==='income')continue;const a=Math.max(d0,new Date(r.start).getTime(),now),e=Math.min(d1,r.end?new Date(r.end).getTime():b18.getTime());
+      const m=Math.max(0,(e-a)/(30.44*864e5));const v=toBase(r.amount,r.cur)*m;s+=r.type==='expense'?-v:v}
+    return s};
   let fund=Math.max(0,c.cash),debt=c.debt;const fr=S.fc.fundRate/100,top=toBase(S.fc.topup,S.child.base)*12;
   const pts=[];const snap=age=>{const rv=realty.reduce((s,x)=>s+x.v,0),gv=growing.reduce((s,x)=>s+x.v,0);pts.push({age,net:rv+gv+fund-debt,liquid:gv+fund,realty:rv,fund,debt})};
   snap(start);const steps=Math.ceil(left);
   for(let i=1;i<=steps;i++){const frac=Math.min(1,left-(i-1));
     const rent=realty.reduce((s,x)=>s+x.rent,0)*frac;let toFund=rent;
     if(debt>0&&rule!=='fund'){const sh=rule==='split'?.5:1;const pay=Math.min(debt,rent*sh);debt-=pay;toFund=rent-pay}
-    fund=fund*Math.pow(1+fr,frac)+toFund+top*frac;
+    fund=fund*Math.pow(1+fr,frac)+toFund+top*frac+flows(now+(i-1)*Y,now+(i-1+frac)*Y);
     realty.forEach(x=>{x.v*=Math.pow(1+x.g,frac);x.rent*=Math.pow(1+x.g,frac)});
     growing.forEach(x=>x.v*=Math.pow(1+x.r,frac));
     snap(Math.min(18,start+i));}
@@ -556,7 +607,7 @@ function forecast(rule){
 function valueAt(pts,age,key){let p=pts[0];for(const x of pts)if(x.age<=age+1e-6)p=x;return p[key]}
 
 /* chrome */
-const TABS=[['home','Главная','home'],['ops','Операции','list'],['add','','plus'],['assets','Активы','box'],['plan','План','chart']];
+const TABS=[['home','Главная','home'],['ops','Операции','list'],['add','','plus'],['assets','Инвестиции','pie'],['plan','План','chart']];
 function renderChrome(){
   const has=!!S.child.name;
   document.getElementById('tabbar').hidden=!has;
@@ -617,13 +668,13 @@ function home(){
   const nextGoal=[...S.goals].sort((x,y)=>x.age-y.age).find(g=>g.age>a);
   const srcRows=Object.entries(c.src).filter(x=>x[1]>0).sort((x,y)=>y[1]-x[1]);const tot=srcRows.reduce((s,x)=>s+x[1],0)||1;
   const col=k=>k==='income'?'var(--c-income)':`var(${SRC[k].c})`;const lab=k=>k==='income'?'Доход от активов':SRC[k].l;
-  const recent=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,4);
+  const T=today();const past=S.ops.filter(o=>o.date<=T);const recent=[...past].sort((x,y)=>y.date.localeCompare(x.date)).slice(0,4);const up=upcoming();
   return `<section class="hero">
     <div class="hk"><span class="k">Капитал ребёнка</span><div class="curs" role="group" aria-label="Валюта">${CURS.map(c=>`<button data-cur="${c}" aria-pressed="${S.child.base===c}" aria-label="${c}">${SYM[c]}</button>`).join('')}</div></div>
     <span class="orb o1"></span><span class="orb o2"></span>
     <div class="v money" id="heroV" data-v="${c.net}">${money(c.net)}</div>
     ${spark(pts)}
-    <div class="row"><span class="pill">К 18 годам ≈ <span class="money">${money(e.net,null,true)}</span></span><span class="muted">+${money(c.rentM,null,true)} в месяц</span></div>
+    <div class="row"><span class="pill">К 18 годам ≈ <span class="money">${money(e.net,null,true)}</span></span><span class="muted">${c.monthly>0?'+'+money(c.monthly,null,true)+' в месяц':''}</span></div>
   </section>
   <div class="qa">
     ${[['in','Поступление'],['buy','Покупка'],['income','Доход'],['expense','Расход']].map(([k,l])=>`<button data-newop="${k}"><span class="ic ${TYPES[k][2]}">${I(TYPES[k][1])}</span>${l}</button>`).join('')}
@@ -644,7 +695,8 @@ function home(){
   <div class="card">${srcRows.length?`<div class="stack">${srcRows.map(([k,v])=>`<i style="flex:${v};background:${col(k)}"></i>`).join('')}</div>
     <div class="legend">${srcRows.map(([k,v])=>`<div class="lg"><span class="dot" style="background:${col(k)}"></span><span class="n">${lab(k)}</span><span class="p">${Math.round(v/tot*100)}%</span><span class="m money">${money(v,null,true)}</span></div>`).join('')}</div>`
     :`<div class="empty"><b>Пока пусто</b>Добавьте первое поступление — подарок или пособие.</div>`}</div>
-  <div class="sec"><h2>Последние записи</h2>${S.ops.length>4?`<button class="link" data-tab="ops">Все</button>`:''}</div>
+  ${up.length?`<div class="sec"><h2>Скоро</h2>${up.length>3?`<button class="link" data-tab="ops">Все ${up.length}</button>`:''}</div><div class="list">${up.slice(0,3).map(x=>x.o?opItem(x.o):recItem(x.r)).join('')}</div>`:''}
+  <div class="sec"><h2>Последние записи</h2>${past.length>4?`<button class="link" data-tab="ops">Все</button>`:''}</div>
   ${recent.length?`<div class="list">${recent.map(opItem).join('')}</div>`:`<div class="card empty"><b>Записей нет</b>Нажмите «+» внизу.</div>`}`;
 }
 
@@ -655,12 +707,19 @@ function opMeta(o){
   if(o.type==='income')return {i:'up',t:'t-inc',title:'Доход: '+(o.kind||'аренда'),sub:a?a.name:'',sign:'+',cls:'pos'};
   if(o.type==='expense')return {i:'out',t:'t-exp',title:o.cat?o.cat[0].toUpperCase()+o.cat.slice(1):'Расход',sub:o.note||'Расход на ребёнка',sign:'−',cls:''};
   if(o.type==='repay')return {i:'back',t:'t-loan',title:'Возврат займа',sub:o.from,sign:'−',cls:'negc'};
+  if(o.type==='sell'){const pr=sellProfit(o);return {i:'tag',t:'t-inc',title:'Продажа: '+(a?a.name:'актив'),sub:(pr>=0?'прибыль +':'убыток −')+money(Math.abs(pr),null,true)+(o.qty?' · '+fmtQty(o.qty)+' шт.':''),sign:'+',cls:'pos'}}
   return {i:a?KIND_I[a.kind]:'home',t:'t-buy',title:a?a.name:'Покупка',sub:'Покупка · '+(o.parts||[]).length+' '+plural((o.parts||[]).length,['источник','источника','источников']),sign:'',cls:''};
 }
 function opItem(o){
-  const m=opMeta(o);const alt=o.cur!==S.child.base?`<small class="money">${money(toBase(o.amount,o.cur),null,true)}</small>`:`<small>${dShort(o.date)}</small>`;
-  return `<button class="item" data-op="${o.id}"><span class="ic ${m.t}">${I(m.i)}</span><span class="tx"><b>${esc(m.title)}</b><span>${esc(m.sub||'')}</span></span><span class="am"><span class="money ${m.cls}">${m.sign}${money(o.amount,o.cur)}</span>${alt}</span></button>`;
+  const m=opMeta(o);const fut=o.date>today();
+  const alt=fut?`<small>ожидается ${dShort(o.date)}</small>`:o.cur!==S.child.base?`<small class="money">${money(toBase(o.amount,o.cur),null,true)}</small>`:`<small>${dShort(o.date)}</small>`;
+  return `<button class="item${fut?' planned':''}" data-op="${o.id}"><span class="ic ${m.t}">${I(fut?'clock':m.i)}</span><span class="tx"><b>${esc(m.title)}</b><span>${o.rec?I('repeat','rpt'):''}${esc(m.sub||'')}</span></span><span class="am"><span class="money ${m.cls}">${m.sign}${money(o.amount,o.cur)}</span>${alt}</span></button>`;
 }
+function upcoming(){const T=today();const l=S.ops.filter(o=>o.date>T).map(o=>({o,date:o.date}));
+  for(const r of S.recs||[]){const d=nextRecDate(r);if(d)l.push({r,date:d})}
+  return l.sort((a,b)=>a.date.localeCompare(b.date))}
+function recItem(r){const m=opMeta(r);const d=nextRecDate(r);
+  return `<button class="item planned" data-rec="${r.id}"><span class="ic ${m.t}">${I('repeat')}</span><span class="tx"><b>${esc(m.title)}</b><span>${r.from?esc(r.from)+' · ':''}каждый месяц, ${r.day}-го${r.end?' · до '+dShort(r.end):''}</span></span><span class="am"><span class="money ${m.cls}">${m.sign}${money(r.amount,r.cur)}</span><small>${d?'след. '+dShort(d):''}</small></span></button>`}
 /* contributions report: who gave how much, for which period */
 const F={period:'all',from:'',to:'',src:'all',who:null};
 const FSRC=[['all','Все'],['gift','Подарки'],['parentGift','Родители'],['matcap','Маткапитал'],['gov','Пособия'],['loan','Займы'],['earn','Заработок'],['income','Доход']];
@@ -674,14 +733,15 @@ function periodRange(){
   return ['0000-01-01','9999-12-31'];
 }
 function whoOf(src,from){const f=(from||'').trim();if(f)return f;return src==='matcap'?'Материнский капитал':src==='gov'?'Государство':src==='earn'?S.child.name||'Ребёнок':src==='income'?'Доход от активов':src==='loan'?'Родители':SRC[src]?.l||'Без имени'}
-function contribs(){
-  const out=[];
-  for(const o of S.ops){
+function contribs(raw){
+  const out=[];const T=today();
+  for(const o of S.ops){if(o.date>T)continue;
+    if(o.type==='sell'){const a=asset(o.assetId);const pr=sellProfit(o);if(pr>0)out.push({op:o.id,date:o.date,src:'income',who:a?a.name:'Продажа актива',v:pr})}
     if(o.type==='in')out.push({op:o.id,date:o.date,src:o.src,who:whoOf(o.src,o.from),v:toBase(o.amount,o.cur)});
     if(o.type==='income'){const a=asset(o.assetId);out.push({op:o.id,date:o.date,src:'income',who:a?a.name:'Доход от активов',v:toBase(o.amount,o.cur)})}
     if(o.type==='buy')for(const p of o.parts||[])if(p.src!=='savings')out.push({op:o.id,date:o.date,src:p.src,who:whoOf(p.src,p.from),v:toBase(p.amount,o.cur)});
   }
-  const [a,b]=periodRange();
+  if(raw)return out;const [a,b]=periodRange();
   return out.filter(c=>c.date>=a&&c.date<=b&&(F.src==='all'||c.src===F.src));
 }
 const srcColor=k=>k==='income'?'var(--c-income)':`var(${SRC[k].c})`;
@@ -706,41 +766,57 @@ function contribCard(){
   </div>`;
 }
 function opsView(){
-  if(!S.ops.length)return `<h1 class="ptitle">Операции</h1><div class="card empty"><b>Записей пока нет</b>Нажмите «+», чтобы записать подарок, пособие или покупку.</div>`;
+  if(!S.ops.length&&!(S.recs||[]).length)return `<h1 class="ptitle">Операции</h1><div class="card empty"><b>Записей пока нет</b>Нажмите «+», чтобы записать подарок, пособие или покупку.</div>`;
   const filtered=F.period!=='all'||F.src!=='all'||F.who;
-  let list=[...S.ops].sort((x,y)=>y.date.localeCompare(x.date));
+  const T=today();let list=S.ops.filter(o=>o.date<=T).sort((x,y)=>y.date.localeCompare(x.date));const up=upcoming();
   const fsum={};
+  if(!filtered)contribs(true).forEach(c=>fsum[c.op]=(fsum[c.op]||0)+c.v);
   if(filtered){contribs().filter(c=>!F.who||c.who.toLowerCase()===F.who.toLowerCase()).forEach(c=>fsum[c.op]=(fsum[c.op]||0)+c.v);list=list.filter(o=>o.id in fsum)}
   const groups={};list.forEach(o=>{const k=o.date.slice(0,7);(groups[k]=groups[k]||[]).push(o)});
   return `<h1 class="ptitle">Операции</h1>`+contribCard()
+    +(!filtered&&up.length?`<div class="sec"><h2>Запланировано</h2><span class="cap">не в капитале до даты</span></div><div class="list">${up.map(x=>x.o?opItem(x.o):recItem(x.r)).join('')}</div>`:'')
     +`<div class="sec"><h2>${F.who?esc(F.who):filtered?'Записи по фильтру':'Все записи'}</h2><span class="cap">${list.length} ${plural(list.length,['запись','записи','записей'])}</span></div>`
     +(list.length?'':`<div class="card empty">Нет записей по этому фильтру.</div>`)
     +Object.entries(groups).map(([k,ops])=>{
-    const [y,m]=k.split('-');const inflow=filtered?ops.reduce((s,o)=>s+(fsum[o.id]||0),0):ops.reduce((s,o)=>{if(o.type==='in'||o.type==='income')return s+toBase(o.amount,o.cur);if(o.type==='buy')return s+(o.parts||[]).filter(p=>p.src!=='savings').reduce((q,p)=>q+toBase(p.amount,o.cur),0);return s},0);
+    const [y,m]=k.split('-');const inflow=ops.reduce((s,o)=>s+(fsum[o.id]||0),0);
     const nm=MONTHS[+m-1];return `<div class="month"><span>${nm[0].toUpperCase()+nm.slice(1)} ${y}</span><span class="money">+${money(inflow,null,true)}</span></div><div class="list">${ops.map(opItem).join('')}</div>`}).join('')
     +`<p class="fine">Суммы в других валютах пересчитаны по курсу ЦБ РФ из настроек.</p>`;
 }
 
-/* assets */
-function assetCard(a){
-  const vb=toBase(a.value,a.cur)*a.share/100;const ch=a.price?(a.value-a.price)/a.price*100:0;
-  const facts=[['Доля',a.share+'%'],['Куплено',money(a.price,a.cur,true)]];
-  if(a.kind==='realty')facts.push(['Аренда',money(a.rent,a.cur)+'/мес'],['Расходы',a.cost+'%'],['Рост',a.growth+'% в год']);
+/* investments: fixed purchase price until sale */
+function assetCard(a,st){
+  st=st||assetState(a);const buy=st.buy||S.ops.find(o=>o.type==='buy'&&o.assetId===a.id);
+  const partial=a.qty&&st.qty<a.qty-1e-9;
+  const facts=[['Куплено',buy?new Date(buy.date).toLocaleDateString('ru-RU'):'—'],['Доля',a.share+'%']];
+  if(a.qty)facts.push(['Количество',fmtQty(st.qty)+(partial?' из '+fmtQty(a.qty):'')+' шт.'],['Цена за шт.',money(a.price/a.qty,a.cur)]);
+  if(a.kind==='realty')facts.push(['Аренда',money(a.rent,a.cur)+'/мес']);
   else if(a.kind==='other')facts.push(['Рост',a.growth+'% в год']);else facts.push(['Доходность',a.rate+'% в год']);
-  const buy=S.ops.find(o=>o.type==='buy'&&o.assetId===a.id);
-  const fund=buy?`<div class="fund"><div class="cap">Источники денег</div><div class="stack">${buy.parts.map(p=>`<i style="flex:${p.amount};background:var(${SRC[p.src].c})"></i>`).join('')}</div>
+  const un=a.est!==undefined?a.est-st.cost:null;const unp=un!==null&&st.cost?un/st.cost*100:0;
+  const fund=buy&&buy.parts?`<div class="fund"><div class="cap">Источники денег</div><div class="stack">${buy.parts.map(p=>`<i style="flex:${p.amount};background:var(${SRC[p.src].c})"></i>`).join('')}</div>
     <div class="legend">${buy.parts.map(p=>`<div class="lg"><span class="dot" style="background:var(${SRC[p.src].c})"></span><span class="n">${esc(SRC[p.src].l)}${p.from?` · ${esc(p.from)}`:''}</span><span class="m money">${money(p.amount,buy.cur,true)}</span></div>`).join('')}</div></div>`:'';
-  return `<button class="card acard" data-asset="${a.id}"><div class="top"><span class="ic t-buy">${I(KIND_I[a.kind])}</span><span class="nm"><b>${esc(a.name)}</b><span>${KIND[a.kind]}</span></span>
-    <span class="val"><b class="money">${money(a.value,a.cur)}</b><span class="${ch>=0?'pos':'negc'}">${a.cur!==S.child.base?money(vb,null,true):(ch>=0?'+':'')+ch.toFixed(1)+'%'}</span></span></div>
+  return `<button class="card acard${st.future?' planned':''}" data-asset="${a.id}"><div class="top"><span class="ic t-buy">${I(st.future?'clock':KIND_I[a.kind])}</span><span class="nm"><b>${esc(a.name)}</b><span>${KIND[a.kind]}${st.future&&buy?' · покупка '+dShort(buy.date):''}</span></span>
+    <span class="val"><b class="money">${money(st.cost,a.cur)}</b><span class="${un===null?'muted2':un>=0?'pos':'negc'}">${un===null?'цена покупки':'оценка '+(un>=0?'+':'')+unp.toFixed(1)+'%'}</span></span></div>
     <div class="facts">${facts.map(f=>`<div class="fact"><span>${f[0]}</span><b class="money">${f[1]}</b></div>`).join('')}</div>${fund}</button>`;
 }
 function assetsView(){
-  const c=compute();
-  return `<h1 class="ptitle">Активы</h1>
-  ${S.assets.length?`<div class="card" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div><div class="cap">Всего в активах</div><div style="font-size:24px;font-weight:800;letter-spacing:-.02em" class="money">${money(c.assets)}</div></div><span class="badge">${S.assets.length} ${plural(S.assets.length,['актив','актива','активов'])}</span></div>`:''}
-  <div class="cards">${S.assets.length?S.assets.map(assetCard).join(''):`<div class="card empty"><b>Активов пока нет</b>Квартира, вклад, акции — всё, что куплено на имя ребёнка.</div>`}</div>
-  <button class="addrow" data-newop="buy">${I('plus')}Купить актив</button>
-  <p class="fine">Нажмите на актив, чтобы обновить оценку, аренду или ставку.</p>`;
+  const T=today(),c=compute();
+  const rows=S.assets.map(a=>({a,st:assetState(a,T)}));
+  const owned=rows.filter(x=>x.st.owned),plan=rows.filter(x=>x.st.future);
+  const sells=S.ops.filter(o=>o.type==='sell').sort((x,y)=>y.date.localeCompare(x.date));
+  const hasEst=owned.some(x=>x.a.est!==undefined);
+  const est=owned.reduce((s,x)=>s+toBase(x.a.est??x.st.cost,x.a.cur)*x.a.share/100,0);
+  const r=c.realized;
+  return `<h1 class="ptitle">Инвестиции</h1>
+  <div class="card invsum"><div class="cap">В портфеле по цене покупки</div><div class="big money">${money(c.assets)}</div>
+    <div class="facts" style="margin-top:12px"><div class="fact"><span>Позиций</span><b>${owned.length}</b></div>
+    <div class="fact"><span>Прибыль от продаж</span><b class="money ${r>0?'pos':r<0?'negc':''}">${r?(r>0?'+':'−')+money(Math.abs(r),null,true):'—'}</b></div>
+    ${hasEst?`<div class="fact"><span>По оценке</span><b class="money">${money(est,null,true)}</b></div>`:''}</div></div>
+  <div class="sec"><h2>В портфеле</h2></div>
+  <div class="cards">${owned.length?owned.map(x=>assetCard(x.a,x.st)).join(''):`<div class="card empty"><b>Пока пусто</b>Квартира, вклад, акции, фонды — всё, что куплено на имя ребёнка.</div>`}</div>
+  <div class="g2" style="margin-top:12px"><button class="addrow" style="margin:0" data-newop="buy">${I('plus')}Купить</button><button class="addrow" style="margin:0" data-newop="sell">${I('tag')}Продать</button></div>
+  ${plan.length?`<div class="sec"><h2>Покупка запланирована</h2></div><div class="cards">${plan.map(x=>assetCard(x.a,x.st)).join('')}</div>`:''}
+  ${sells.length?`<div class="sec"><h2>Продажи</h2><span class="cap">${sells.length}</span></div><div class="list">${sells.map(opItem).join('')}</div>`:''}
+  <p class="fine">Актив учитывается в капитале по цене покупки до продажи. При продаже разница с ценой покупки становится прибылью ребёнка. Рыночная оценка показывается справочно и на капитал не влияет.</p>`;
 }
 
 /* plan */
@@ -835,10 +911,15 @@ const curSel=(id,v,lbl)=>`<select id="${id}" aria-label="${lbl||'Валюта'}"
 const srcOpts=(v,sav)=>Object.entries(SRC).filter(([k])=>sav||k!=='savings').map(([k,s])=>`<option value="${k}" ${k===v?'selected':''}>${s.l}</option>`).join('');
 function err(t){const b=document.getElementById('shb');b.querySelector('.err')?.remove();b.insertAdjacentHTML('afterbegin',`<div class="err" role="alert">${esc(t)}</div>`);b.scrollTop=0}
 
-function opBody(type){
+function opBody(type,preset){
+  const sellable=S.assets.filter(a=>assetState(a,'9999-12-31').owned);const pa=preset?asset(preset):sellable[0];
   const lenders=Object.entries(compute().loans).filter(x=>x[1]>0.5).map(x=>x[0]);
   return `<div class="types" role="radiogroup" aria-label="Тип записи">${Object.entries(TYPES).map(([k,[l,i]])=>`<label><input type="radio" name="otype" value="${k}" ${k===type?'checked':''}><span>${I(i)}${l}</span></label>`).join('')}</div>
-  <div class="amt"><input id="o_amount" type="number" inputmode="decimal" min="0" step="any" placeholder="0" aria-label="${type==='buy'?'Цена покупки':'Сумма'}">${curSel('o_cur',type==='buy'?'USD':S.child.base)}</div>
+  <div class="amt"><input id="o_amount" type="number" inputmode="decimal" min="0" step="any" placeholder="0" aria-label="${type==='buy'?'Цена покупки':type==='sell'?'Цена продажи':'Сумма'}">${curSel('o_cur',type==='buy'?'USD':type==='sell'&&pa?pa.cur:S.child.base)}</div>
+  ${type==='buy'?'<p class="hint">Цена покупки фиксируется: актив учитывается по ней до продажи.</p>':type==='sell'?'<p class="hint">Укажите сумму, за которую продали.</p>':''}
+  ${type==='sell'?(sellable.length?`<div class="f"><label for="sl_asset">Что продаём</label><select id="sl_asset">${sellable.map(a=>`<option value="${a.id}" ${pa&&a.id===pa.id?'selected':''}>${esc(a.name)}</option>`).join('')}</select></div>
+    <div class="f" id="slQtyWrap" hidden><label for="sl_qty">Сколько продаём, шт.</label><input id="sl_qty" type="number" inputmode="decimal" min="0" step="any"></div>
+    <div id="sellinfo" style="margin-bottom:12px"></div>`:'<div class="card empty" style="box-shadow:none;background:var(--surface-2)"><b>Нечего продавать</b>Сначала добавьте покупку актива.</div>'):''}
   ${type==='in'?`<div class="f"><label for="o_src">Вид средств</label><select id="o_src">${srcOpts('gift')}</select></div>
     <div class="f" id="fromWrap"><label for="o_from" id="fromLbl">${SRC.gift.from}</label><input id="o_from" placeholder="${SRC.gift.ph}"></div>
     <p class="hint" id="srcHint"></p>`:''}
@@ -853,23 +934,45 @@ function opBody(type){
     <div class="g3"><div class="f b-realty"><label for="b_rent">Аренда в мес.</label><input id="b_rent" type="number" inputmode="decimal" value="0" min="0"></div>
     <div class="f b-realty"><label for="b_cost">Расходы, %</label><input id="b_cost" type="number" inputmode="decimal" value="25" min="0" max="100"></div>
     <div class="f b-grow"><label for="b_growth">Рост в год, %</label><input id="b_growth" type="number" inputmode="decimal" value="3" step="0.5"></div>
-    <div class="f b-rate" hidden><label for="b_rate">Доходность, %</label><input id="b_rate" type="number" inputmode="decimal" value="10" step="0.5"></div></div>
+    <div class="f b-rate" hidden><label for="b_rate">Доходность, %</label><input id="b_rate" type="number" inputmode="decimal" value="10" step="0.5"></div>
+    <div class="f b-qty" hidden><label for="b_qty">Количество, шт.</label><input id="b_qty" type="number" inputmode="decimal" min="0" step="any" placeholder="необяз."></div></div>
     <div class="grp">Откуда деньги</div>
     <div class="parts" id="parts"></div>
     <div class="meter" id="meter"></div>
     <button type="button" class="addrow" data-action="addpart" style="margin-top:8px">${I('plus')}Добавить источник</button>`:''}
-  <div class="g2" style="margin-top:12px"><div class="f"><label for="o_date">Дата</label><input id="o_date" type="date" value="${today()}"></div>
-  <div class="f"><label for="o_note">Комментарий</label><input id="o_note" placeholder="Необязательно"></div></div>`;
+  ${['in','income','expense'].includes(type)?`<label class="rep"><span>${I('repeat')}Повторять каждый месяц</span><input type="checkbox" id="o_rep"></label>`:''}
+  <div class="g2" style="margin-top:12px"><div class="f"><label for="o_date" id="dateLbl">Дата</label><input id="o_date" type="date" value="${today()}"></div>
+  <div class="f" id="repEndWrap" hidden><label for="o_end">До (необязательно)</label><input id="o_end" type="date"></div>
+  <div class="f" id="noteWrap"><label for="o_note">Комментарий</label><input id="o_note" placeholder="Необязательно"></div></div>
+  <p class="hint" id="dateHint" style="margin-top:-2px"></p>`;
 }
 function partRow(src,from,amount){
   return `<div class="part"><select data-k="src" aria-label="Вид средств">${srcOpts(src||'gift',true)}</select><button type="button" class="rm" data-action="delpart" aria-label="Убрать источник">${I('trash')}</button>
   <div class="r2"><input data-k="from" placeholder="От кого" value="${esc(from||'')}" aria-label="От кого"><input data-k="amount" type="number" inputmode="decimal" min="0" step="any" placeholder="Сумма" value="${amount??''}" aria-label="Сумма"></div></div>`;
 }
-function openOp(type){
+function openOp(type,preset){
   type=type||'in';
-  openSheet('Новая запись',opBody(type),`<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-action="saveop" data-type="${type}">Сохранить</button>`);
+  openSheet('Новая запись',opBody(type,preset),`<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-action="saveop" data-type="${type}">Сохранить</button>`);
   if(type==='buy'){document.getElementById('parts').innerHTML=partRow('gift')+partRow('parentGift');syncBuy()}
   if(type==='in')syncSrc();
+  if(type==='sell')syncSell(true);
+  syncDate();
+}
+function syncDate(){const d=document.getElementById('o_date'),h=document.getElementById('dateHint');if(!d||!h)return;
+  const rep=document.getElementById('o_rep'),on=!!(rep&&rep.checked);
+  document.getElementById('repEndWrap').hidden=!on;document.getElementById('noteWrap').hidden=on;document.getElementById('dateLbl').textContent=on?'Первое начисление':'Дата';
+  const v=d.value||today();
+  h.textContent=on?`Каждый месяц ${+v.slice(8)}-го числа, начиная с ${fDate(v)}. Начисляется автоматически.`:v>today()?`Запланировано: засчитается в капитал ${fDate(v)}.`:'';
+}
+function syncSell(fromAsset){
+  const sel=document.getElementById('sl_asset');if(!sel)return;const a=asset(sel.value);const box=document.getElementById('sellinfo');if(!a){box.innerHTML='';return}
+  const st=assetState(a,'9999-12-31');const q=document.getElementById('sl_qty');document.getElementById('slQtyWrap').hidden=!a.qty;
+  if(fromAsset){document.getElementById('o_cur').value=a.cur;if(a.qty)q.value=+st.qty.toFixed(6)}
+  const sq=a.qty?Math.min(+q.value||0,st.qty):0;const cost=a.qty?(st.qty?st.cost*sq/st.qty:0):st.cost;
+  const amt=+document.getElementById('o_amount').value||0,cur=document.getElementById('o_cur').value;
+  const pr=toBase(amt,cur)-toBase(cost,a.cur);const pct=cost?pr/toBase(cost,a.cur)*100:0;
+  box.innerHTML=`<div class="rows"><div><span>Цена покупки${a.qty?' · '+fmtQty(sq)+' шт.':''}</span><b class="money">${money(cost,a.cur)}</b></div>${a.qty?`<div><span>В портфеле</span><b>${fmtQty(st.qty)} шт.</b></div>`:''}
+    ${amt?`<div><span>${pr>=0?'Прибыль':'Убыток'}</span><b class="money ${pr>=0?'pos':'negc'}">${pr>=0?'+':'−'}${money(Math.abs(pr))} · ${pr>=0?'+':''}${pct.toFixed(1)}%</b></div>`:''}</div>`;
 }
 function syncSrc(){const s=document.getElementById('o_src');if(!s)return;const d=SRC[s.value];
   document.getElementById('fromWrap').hidden=!d.from;if(d.from){document.getElementById('fromLbl').textContent=d.from;document.getElementById('o_from').placeholder=d.ph||''}
@@ -880,6 +983,7 @@ function syncBuy(){
   sheet.querySelectorAll('.b-realty').forEach(e=>e.hidden=kind!=='realty');
   sheet.querySelectorAll('.b-grow').forEach(e=>e.hidden=!(kind==='realty'||kind==='other'));
   sheet.querySelectorAll('.b-rate').forEach(e=>e.hidden=!(kind==='deposit'||kind==='fund'));
+  sheet.querySelectorAll('.b-qty').forEach(e=>e.hidden=!(kind==='fund'||kind==='other'));
   const price=+document.getElementById('o_amount').value||0,cur=document.getElementById('o_cur').value;
   const sum=[...sheet.querySelectorAll('.part [data-k="amount"]')].reduce((s,i)=>s+(+i.value||0),0);const diff=price-sum;
   const pct=price?Math.min(100,sum/price*100):0;const cls=!price?'':Math.abs(diff)<0.005?'full':diff<0?'over':'';
@@ -889,6 +993,7 @@ function saveOp(type){
   const g=id=>{const e=document.getElementById(id);return e?e.value.trim():''};
   const amount=+g('o_amount');const o={id:uid(),type,date:g('o_date')||today(),amount,cur:g('o_cur'),note:g('o_note')};
   if(!(amount>0))return err('Введите сумму больше нуля.');
+  const repOn=!!document.getElementById('o_rep')?.checked;
   if(type==='in'){o.src=g('o_src');o.from=SRC[o.src].from?g('o_from'):'';if(o.src==='loan'&&!o.from)o.from='Родители'}
   if(type==='income'){o.assetId=g('o_asset');o.kind=g('o_kind');if(!o.assetId)return err('Сначала добавьте актив, который приносит доход.')}
   if(type==='expense'){o.cat=g('o_cat')}
@@ -901,10 +1006,30 @@ function saveOp(type){
     if(Math.abs(sum-amount)>0.005)return err(`Источники дают ${money(sum,o.cur)}, а цена ${money(amount,o.cur)}. Суммы должны совпасть.`);
     const sav=parts.filter(p=>p.src==='savings').reduce((s,p)=>s+toBase(p.amount,o.cur),0);
     if(sav>compute().cash+0.5)return err(`Свободных денег у ребёнка ${money(compute().cash)} — меньше, чем указано из накоплений.`);
-    const a={id:uid(),name,kind:g('b_kind'),cur:o.cur,price:amount,value:amount,share:Math.min(100,Math.max(1,+g('b_share')||100)),rent:+g('b_rent')||0,cost:+g('b_cost')||0,growth:+g('b_growth')||0,rate:+g('b_rate')||0};
+    const kind=g('b_kind'),qty=(kind==='fund'||kind==='other')?+g('b_qty')||0:0;
+    const a={id:uid(),name,kind,cur:o.cur,price:amount,value:amount,share:Math.min(100,Math.max(1,+g('b_share')||100)),rent:+g('b_rent')||0,cost:+g('b_cost')||0,growth:+g('b_growth')||0,rate:+g('b_rate')||0};
+    if(qty>0)a.qty=qty;
     S.assets.push(a);o.assetId=a.id;o.parts=parts;
   }
+  if(type==='sell'){const a=asset(g('sl_asset'));if(!a)return err('Выберите, что продаёте.');
+    const at=assetState(a,o.date),fin=assetState(a,'9999-12-31');
+    if(!at.owned)return err('На эту дату актив ещё не куплен или уже продан.');
+    let cost;
+    if(a.qty){const sq=+g('sl_qty');const mx=Math.min(at.qty,fin.qty);if(!(sq>0))return err('Укажите, сколько штук продаёте.');if(sq>mx+1e-9)return err(`Можно продать не больше ${fmtQty(mx)} шт.`);o.qty=sq;cost=at.cost*sq/at.qty}
+    else cost=Math.min(at.cost,fin.cost);
+    o.assetId=a.id;o.cost=+cost.toFixed(2);
+    if(a.est!==undefined){const rest=at.cost-cost;if(rest<=0.005)delete a.est;else a.est=+(a.est*rest/at.cost).toFixed(2)}
+  }
+  if(repOn){const end=g('o_end');if(end&&end<o.date)return err('Дата окончания раньше первого начисления.');
+    const r={id:uid(),type,amount,cur:o.cur,src:o.src,from:o.from,assetId:o.assetId,kind:o.kind,cat:o.cat,note:o.note,start:o.date,day:+o.date.slice(8),end,last:''};
+    S.recs.push(r);const n=accrue(S);save();closeSheet();render();
+    if(n&&type!=='expense')confetti();
+    return toast(n?`Начислено за ${n} ${plural(n,['месяц','месяца','месяцев'])}, дальше — само`:'Первое начисление '+dShort(r.start));
+  }
+  const fut=o.date>today();
   S.ops.push(o);save();closeSheet();render();
+  if(fut)return toast('Запланировано на '+dShort(o.date));
+  if(type==='sell'){const pr=sellProfit(o);if(pr>0)confetti();return toast(pr>=0?'Продано · прибыль +'+money(pr,null,true):'Продано · убыток −'+money(-pr,null,true))}
   if(type==='in'||type==='income'||type==='buy'){confetti();toast(type==='in'?'+'+money(amount,o.cur)+' в капитал':type==='buy'?'Актив добавлен':'Доход записан')}else toast('Запись сохранена');
 }
 function opDetail(id){
@@ -914,22 +1039,39 @@ function opDetail(id){
   if(o.type==='in'){rows.push(['Вид средств',SRC[o.src].l]);if(o.from)rows.push(['От кого',o.from])}
   if(o.type==='income')rows.push(['Актив',asset(o.assetId)?.name||'—'],['Вид дохода',o.kind]);
   if(o.type==='repay')rows.push(['Кому',o.from]);
+  if(o.type==='sell'){const a=asset(o.assetId);const pr=sellProfit(o);rows.push(['Актив',a?a.name:'—']);if(o.qty)rows.push(['Количество',fmtQty(o.qty)+' шт.']);
+    rows.push(['Цена покупки',money(o.cost,a?a.cur:o.cur)],[pr>=0?'Прибыль':'Убыток',(pr>=0?'+':'−')+money(Math.abs(pr))])}
+  if(o.date>today())rows.unshift(['Статус','Запланировано · засчитается в дату']);
+  if(o.rec)rows.push(['Повтор','каждый месяц']);
   if(o.note)rows.push(['Комментарий',o.note]);
   const parts=o.type==='buy'?`<div class="grp">Откуда деньги</div><div class="rows">${o.parts.map(p=>`<div><span>${esc(SRC[p.src].l)}${p.from?' · '+esc(p.from):''}</span><b class="money">${money(p.amount,o.cur)}</b></div>`).join('')}</div>`:'';
   openSheet(TYPES[o.type][0],`<div class="dhead"><span class="ic ${m.t}">${I(m.i)}</span><b class="money ${m.cls}">${m.sign}${money(o.amount,o.cur)}</b><span>${esc(m.title)}</span></div>
     <div class="rows">${rows.map(r=>`<div><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')}</div>${parts}
-    ${o.type==='buy'?'<p class="fine">Удаление покупки удалит и сам актив.</p>':''}`,
-    `<button class="btn danger" data-delop="${o.id}" data-step="1">Удалить</button><button class="btn ghost" data-action="close">Готово</button>`);
+    ${o.type==='buy'?'<p class="fine">Удаление покупки удалит сам актив и его продажи.</p>':''}`,
+    `${o.rec&&(S.recs||[]).some(r=>r.id===o.rec)?`<button class="btn ghost" data-rec="${o.rec}">Повтор</button>`:''}<button class="btn danger" data-delop="${o.id}" data-step="1">Удалить</button><button class="btn ghost" data-action="close">Готово</button>`);
+}
+function recDetail(id){const r=(S.recs||[]).find(x=>x.id===id);if(!r)return;const m=opMeta(r);
+  const made=S.ops.filter(o=>o.rec===r.id);const sum=made.reduce((s,o)=>s+toBase(o.amount,o.cur),0);const nx=nextRecDate(r);
+  const rows=[['Сумма',money(r.amount,r.cur)+' в месяц'],['Число месяца',r.day+'-е'],['Начало',fDate(r.start)],['Окончание',r.end?fDate(r.end):'без срока'],
+    ['Начислено',made.length+' '+plural(made.length,['раз','раза','раз'])+' · '+money(sum)],['Следующее',r.stopped?'остановлено':nx?fDate(nx):'завершено']];
+  if(r.type==='in'){rows.splice(1,0,['Вид средств',SRC[r.src].l]);if(r.from)rows.splice(2,0,['От кого',r.from])}
+  openSheet('Каждый месяц',`<div class="dhead"><span class="ic ${m.t}">${I('repeat')}</span><b class="money ${m.cls}">${m.sign}${money(r.amount,r.cur)}</b><span>${esc(m.title)}</span></div>
+    <div class="rows">${rows.map(x=>`<div><span>${esc(x[0])}</span><b>${esc(x[1])}</b></div>`).join('')}</div>
+    <p class="fine">Остановка не удаляет уже начисленные записи.</p>`,
+    `${r.stopped||!nx?`<button class="btn danger" data-delrec="${r.id}" data-step="1">Удалить повтор</button>`:`<button class="btn danger" data-stoprec="${r.id}">Остановить</button>`}<button class="btn ghost" data-action="close">Готово</button>`);
 }
 function assetEdit(id){
-  const a=asset(id);if(!a)return;
-  openSheet(esc(a.name),`<div class="g2"><div class="f"><label for="e_value">Оценка сейчас, ${SYM[a.cur]}</label><input id="e_value" type="number" inputmode="decimal" value="${a.value}"></div>
+  const a=asset(id);if(!a)return;const st=assetState(a);const buy=st.buy;
+  const info=[['Цена покупки · фикс',money(a.price,a.cur)],['Дата покупки',buy?fDate(buy.date):'—']];
+  if(a.qty)info.push(['Количество',fmtQty(a.qty)+' шт. · '+money(a.price/a.qty,a.cur)+' за шт.']);
+  if(st.cost<a.price-0.005)info.push(['Осталось по цене покупки',money(st.cost,a.cur)+(a.qty?' · '+fmtQty(st.qty)+' шт.':'')]);
+  openSheet(esc(a.name),`<div class="rows" style="margin-bottom:14px">${info.map(x=>`<div><span>${x[0]}</span><b class="money">${x[1]}</b></div>`).join('')}</div>
+  <div class="g2"><div class="f"><label for="e_est">Рыночная оценка, ${SYM[a.cur]}</label><input id="e_est" type="number" inputmode="decimal" placeholder="справочно" value="${a.est??''}"></div>
   <div class="f"><label for="e_share">Доля ребёнка, %</label><input id="e_share" type="number" inputmode="numeric" value="${a.share}"></div>
   ${a.kind==='realty'?`<div class="f"><label for="e_rent">Аренда в мес., ${SYM[a.cur]}</label><input id="e_rent" type="number" inputmode="decimal" value="${a.rent}"></div><div class="f"><label for="e_cost">Расходы и налог, %</label><input id="e_cost" type="number" inputmode="decimal" value="${a.cost}"></div>`:''}
   ${a.kind==='realty'||a.kind==='other'?`<div class="f"><label for="e_growth">Рост цены, % в год</label><input id="e_growth" type="number" inputmode="decimal" step="0.5" value="${a.growth}"></div>`:`<div class="f"><label for="e_rate">Доходность, % в год</label><input id="e_rate" type="number" inputmode="decimal" step="0.5" value="${a.rate}"></div>`}</div>
-  ${a.kind==='realty'?'<p class="hint">Расходы — налог с аренды, коммунальные платежи, простой и ремонт. Они уменьшают чистый доход в прогнозе.</p>':''}
-  <p class="hint">Оценку стоит обновлять раз в год — по объявлениям или отчёту оценщика.</p>`,
-  `<button class="btn ghost" data-action="close">Отмена</button><button class="btn" data-saveasset="${a.id}">Сохранить</button>`);
+  <p class="hint">Капитал считается по цене покупки до продажи. Оценка — только для справки: показывает, сколько актив мог бы стоить сейчас.${a.estDate?' Обновлена '+new Date(a.estDate).toLocaleDateString('ru-RU')+'.':''}</p>`,
+  `${st.owned?`<button class="btn ghost" data-sellasset="${a.id}">${I('tag')} Продать</button>`:''}<button class="btn" data-saveasset="${a.id}">Сохранить</button>`);
 }
 function goalForm(){
   openSheet('Новая цель',`<div class="f"><label for="g_name">Цель</label><input id="g_name" placeholder="Образование, машина, старт бизнеса"></div>
@@ -972,10 +1114,14 @@ document.addEventListener('click',e=>{
   if(t.dataset.asset)return assetEdit(t.dataset.asset);
   if(t.dataset.delgoal){S.goals=S.goals.filter(g=>g.id!==t.dataset.delgoal);save();render();return toast('Цель удалена')}
   if(t.dataset.delop){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить?';return}
-    const o=S.ops.find(x=>x.id===t.dataset.delop);S.ops=S.ops.filter(x=>x.id!==o.id);if(o.type==='buy')S.assets=S.assets.filter(a=>a.id!==o.assetId);save();closeSheet();render();return toast('Запись удалена')}
+    const o=S.ops.find(x=>x.id===t.dataset.delop);S.ops=S.ops.filter(x=>x.id!==o.id);if(o.type==='buy'){S.assets=S.assets.filter(a=>a.id!==o.assetId);S.ops=S.ops.filter(x=>!(x.type==='sell'&&x.assetId===o.assetId))}save();closeSheet();render();return toast('Запись удалена')}
   if(t.dataset.saveasset){const a=asset(t.dataset.saveasset);const v=id=>{const el=document.getElementById(id);return el&&el.value!==''?+el.value:null};
-    a.value=v('e_value')??a.value;a.share=Math.min(100,Math.max(1,v('e_share')||a.share));
+    const est=v('e_est');if(est===null){delete a.est;delete a.estDate}else if(est!==a.est){a.est=est;a.estDate=today()}a.share=Math.min(100,Math.max(1,v('e_share')||a.share));
     ['rent','cost','growth','rate'].forEach(k=>{const x=v('e_'+k);if(x!==null)a[k]=x});save();closeSheet();render();return toast('Актив обновлён')}
+  if(t.dataset.rec)return recDetail(t.dataset.rec);
+  if(t.dataset.sellasset)return openOp('sell',t.dataset.sellasset);
+  if(t.dataset.stoprec){const r=S.recs.find(x=>x.id===t.dataset.stoprec);if(r){r.stopped=true;if(!r.end||r.end>today())r.end=today()}save();closeSheet();render();return toast('Повтор остановлен')}
+  if(t.dataset.delrec){if(t.dataset.step==='1'){t.dataset.step='2';t.textContent='Точно удалить?';return}S.recs=S.recs.filter(x=>x.id!==t.dataset.delrec);save();closeSheet();render();return toast('Повтор удалён, записи остались')}
   if(t.dataset.kid){if(t.dataset.kid===FAM.active)closeSheet();else switchKid(t.dataset.kid);return}
   if(t.dataset.skin){S.skin=t.dataset.skin;save();applySkin();render();settings();sheet.querySelector('#shb').scrollTop=0;return}
   if(t.dataset.cur){const c=t.dataset.cur;if(c!==S.child.base){S.fc.topup=Math.round(toBase(S.fc.topup,S.child.base)*(S.rates[S.child.base]||1)/(S.rates[c]||1));S.child.base=c;save();render()}return}
@@ -994,7 +1140,7 @@ document.addEventListener('click',e=>{
     if(!n||!(a>0))return err('Введите название и сумму цели.');if(!(age>=1&&age<=18))return err('Возраст цели — от 1 до 18 лет.');
     S.goals.push({id:uid(),name:n,amount:a,cur:document.getElementById('g_cur').value,age});save();closeSheet();render();toast('Цель добавлена')}
   if(act==='start'){const others=Object.keys(FAM.kids).filter(id=>id!==FAM.active&&!FAM.kids[id].example&&FAM.kids[id].child&&FAM.kids[id].child.name);if(others.length){delete FAM.kids[FAM.active];return switchKid(others[0])}S=blank('','');save();tab='home';render();setTimeout(()=>document.getElementById('w_name')?.focus(),60)}
-  if(act==='loadExample'){if(S.child.name&&!S.example){const id='k'+uid();FAM.active=id;S=example();}else S=example();save();tab='home';closeSheet();render();toast('Открыт пример')}
+  if(act==='loadExample'){if(S.child.name&&!S.example){const id='k'+uid();FAM.active=id;S=example();}else S=example();accrue(S);save();tab='home';closeSheet();render();toast('Открыт пример')}
   if(act==='savesettings'){S.child.name=document.getElementById('s_name').value.trim()||S.child.name;S.child.birth=document.getElementById('s_birth').value||S.child.birth;S.child.base=document.getElementById('s_base').value;
     CURS.filter(c=>c!=='RUB').forEach(c=>{const v=+document.getElementById('r_'+c).value;if(v>0)S.rates[c]=v});save();closeSheet();render();toast('Профиль сохранён')}
   if(act==='copyjson'){const ta=document.getElementById('s_json');const fb=()=>{ta.focus();ta.select();toast('Текст выделен — скопируйте его')};
@@ -1013,19 +1159,24 @@ document.addEventListener('click',e=>{
     if(others.length){delete FAM.kids[FAM.active];switchKid(others[0]);toast('Профиль удалён')}else{S=blank('','');save();closeSheet();tab='home';render()}}
 });
 document.addEventListener('change',e=>{
-  if(e.target.name==='otype'){const v=document.getElementById('o_amount')?.value;openOp(e.target.value);if(v)document.getElementById('o_amount').value=v;syncBuy();return}
+  if(e.target.name==='otype'){const v=document.getElementById('o_amount')?.value;openOp(e.target.value);if(v)document.getElementById('o_amount').value=v;syncBuy();syncSell();return}
   if(e.target.name==='rule'){S.fc.rule=e.target.value;save();render()}
   if(e.target.id==='fc_rate'){S.fc.fundRate=+e.target.value||0;save();render()}
   if(e.target.id==='fc_top'){S.fc.topup=+e.target.value||0;save();render()}
   if(e.target.id==='o_src')syncSrc();
+  if(e.target.id==='o_rep'||e.target.id==='o_date')syncDate();
+  if(e.target.id==='sl_asset')syncSell(true);
+  if(e.target.id==='o_cur')syncSell();
   if(e.target.id==='f_from'||e.target.id==='f_to'){F[e.target.id==='f_from'?'from':'to']=e.target.value;F.who=null;render()}
   if(e.target.id==='b_kind'||e.target.id==='o_cur')syncBuy();
 });
-document.addEventListener('input',e=>{if(e.target.closest('.part')||e.target.id==='o_amount')syncBuy()});
+document.addEventListener('input',e=>{if(e.target.closest('.part')||e.target.id==='o_amount')syncBuy();if(e.target.id==='o_amount'||e.target.id==='sl_qty')syncSell()});
 document.addEventListener('submit',e=>{if(e.target.id!=='welcomeForm')return;e.preventDefault();
   const n=document.getElementById('w_name').value.trim(),b=document.getElementById('w_birth').value;if(!n||!b)return;
   S=blank(n,b);save();tab='home';render();toast('Профиль создан')});
 render();
+if(ACCRUED)setTimeout(()=>toast('Начислено ежемесячных поступлений: '+ACCRUED),700);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;const n=accrueAll();if(n){S=FAM.kids[FAM.active];if(scrim.hidden)render();toast('Начислено ежемесячных поступлений: '+n)}});
 
 /* color themes */
 const SKINS=[['emerald','Изумруд','#0E6E59','#0A5747','#fff'],['ocean','Океан','#1A57B5','#123F86','#fff'],['lavender','Лаванда','#6347BE','#4A3396','#fff'],['rose','Роза','#C23E78','#952C5B','#fff'],['graphite','Графит','#262B31','#14181C','#F3E6C8']];
